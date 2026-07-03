@@ -1,6 +1,6 @@
-# SchedulePlanner
+# MedShift
 
-SchedulePlanner is a small hospital shift-planning app. It helps build a staff
+MedShift is a small hospital shift-planning app. It helps build a staff
 schedule with broad shift types, concrete department assignments, fixed days,
 requests, weekly hour limits, and overtime recovery.
 
