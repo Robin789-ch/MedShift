@@ -1,6 +1,6 @@
 num_employees = 8
 num_weeks = 3
-shifts = ["O", "D", "N", "F", "R"]
+shifts = ["O", "D", "N", "F", "R", "H"]
 
 # Fixed assignment: [employee, shift, day].
 # This fixes the first 2 days of the schedule.
@@ -32,7 +32,7 @@ requests = [
 # Shift constraints on continuous sequence:
 # [shift, hard_min, soft_min, min_penalty, soft_max, hard_max, max_penalty]
 shift_constraints = [
-  ["O", 1, 1, 5, 7, 100, 0],
+  ["O", 1, 1, 5, 2, 100, 3],
   ["D", 1, 2, 5, 5, 6, 0],
   ["N", 1, 2, 20, 3, 4, 5],
 ]
@@ -40,13 +40,15 @@ shift_constraints = [
 # Weekly sum constraints on shift days:
 # [shift, hard_min, soft_min, min_penalty, soft_max, hard_max, max_penalty]
 weekly_sum_constraints = [
-  ["O", 1, 2, 7, 3, 7, 0],
+  ["O", 1, 2, 7, 2, 7, 2],
 ]
 
 # Penalized transitions:
 # [previous_shift, next_shift, penalty], where penalty = 0 means forbidden.
 penalized_transitions = [
   ["N", "D", 0],
+  ["O", "R", -2],
+  ["R", "O", -2],
 ]
 
 # Daily demands for demand-covering shifts [day, night] for each day of the week
@@ -62,7 +64,27 @@ weekly_cover_demands = [
 ]
 
 # Penalty for exceeding the cover constraint per demand-covering shift type.
-excess_cover_penalties = [20, 40]
+excess_cover_penalties = [10, 20]
+
+department_fixed_assignments = []
+department_requests = []
+department_switch_penalty = 1
+
+[[departments]]
+id = "day"
+name = "Day"
+shift = "D"
+symbol = "D"
+color = "#ffe08a"
+requirements = [5, 5, 4, 5, 4, 3, 4]
+
+[[departments]]
+id = "night"
+name = "Night"
+shift = "N"
+symbol = "N"
+color = "#5964d8"
+requirements = [1, 1, 2, 1, 2, 3, 1]
 
 [shift_attributes.O]
 name = "Off"
@@ -70,6 +92,8 @@ counts_as_work = false
 covers_demand = false
 counts_as_weekly_off = true
 is_night = false
+requires_fixed_assignment = false
+requires_assignment_request = false
 
 [shift_attributes.D]
 name = "Day"
@@ -77,6 +101,8 @@ counts_as_work = true
 covers_demand = true
 counts_as_weekly_off = false
 is_night = false
+requires_fixed_assignment = false
+requires_assignment_request = false
 
 [shift_attributes.N]
 name = "Night"
@@ -84,6 +110,8 @@ counts_as_work = true
 covers_demand = true
 counts_as_weekly_off = false
 is_night = true
+requires_fixed_assignment = false
+requires_assignment_request = false
 
 [shift_attributes.F]
 name = "Formation"
@@ -91,6 +119,8 @@ counts_as_work = true
 covers_demand = false
 counts_as_weekly_off = false
 is_night = false
+requires_fixed_assignment = true
+requires_assignment_request = false
 
 [shift_attributes.R]
 name = "Recovery"
@@ -98,8 +128,19 @@ counts_as_work = false
 covers_demand = false
 counts_as_weekly_off = false
 is_night = false
+requires_fixed_assignment = false
+requires_assignment_request = false
+
+[shift_attributes.H]
+name = "Holiday"
+counts_as_work = true
+covers_demand = false
+counts_as_weekly_off = false
+is_night = false
+requires_fixed_assignment = false
+requires_assignment_request = true
 
 [work_balance]
 night_shift = "N"
-night_cost = 30
+night_cost = 20
 work_cost = 5

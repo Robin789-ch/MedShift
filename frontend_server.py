@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
 
-from scheduler import parse_config, solve_shift_scheduling
+from scheduler import parse_config, solve_schedule
 
 
 CONFIG_PATH = pathlib.Path(__file__).with_name("config.toml")
@@ -76,7 +76,8 @@ PAGE = """<!doctype html>
     h2 { font-size: 16px; }
 
     button,
-    input {
+    input,
+    select {
       font: inherit;
     }
 
@@ -110,7 +111,8 @@ PAGE = """<!doctype html>
       opacity: 0.65;
     }
 
-    input {
+    input,
+    select {
       min-height: 36px;
       border: 1px solid #c9d2dc;
       border-radius: 6px;
@@ -166,12 +168,51 @@ PAGE = """<!doctype html>
       gap: 8px;
     }
 
+    .department-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .department-row {
+      display: grid;
+      gap: 10px;
+      border-top: 1px solid #e5e7eb;
+      padding-top: 12px;
+    }
+
+    .department-row:first-child {
+      border-top: 0;
+      padding-top: 0;
+    }
+
+    .department-main {
+      display: grid;
+      grid-template-columns: minmax(160px, 1fr) 94px 92px 50px 36px;
+      gap: 8px;
+      align-items: end;
+    }
+
+    .department-requirements {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(54px, 1fr));
+      gap: 8px;
+    }
+
+    .department-requirements input {
+      width: 100%;
+      text-align: center;
+    }
+
+    .color-input {
+      width: 50px;
+      padding: 3px;
+    }
+
     .icon-button {
       width: 36px;
       padding: 0;
     }
 
-    .coverage-table,
     .schedule-table,
     .result-table {
       width: 100%;
@@ -190,14 +231,6 @@ PAGE = """<!doctype html>
       background: #eef2f6;
       color: #334155;
       font-size: 13px;
-    }
-
-    .coverage-table input {
-      width: 100%;
-      min-height: 34px;
-      border: 0;
-      border-radius: 0;
-      text-align: center;
     }
 
     .table-wrap {
@@ -267,6 +300,10 @@ PAGE = """<!doctype html>
       color: white;
     }
 
+    .assignment-picker {
+      min-width: 240px;
+    }
+
     .fixed { background: #e5e7eb; color: #374151; }
     .desired { background: #dff7e7; color: #14532d; }
     .not-desired { background: #fde2e2; color: #7f1d1d; }
@@ -278,6 +315,7 @@ PAGE = """<!doctype html>
     .shift-n { background: #5964d8; color: white; }
     .shift-f { background: #d9c7ff; color: #39206b; }
     .shift-r { background: #bfe7e3; color: #164e47; }
+    .shift-h { background: #f8b4c4; color: #5f1730; }
 
     #status {
       color: #667085;
@@ -336,6 +374,10 @@ PAGE = """<!doctype html>
       .setup-grid {
         grid-template-columns: 1fr;
       }
+      .department-main,
+      .department-requirements {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
@@ -362,12 +404,10 @@ PAGE = """<!doctype html>
 
         <section class="panel">
           <div class="panel-head">
-            <h2>Weekly Cover Demand</h2>
+            <h2>Departments</h2>
+            <button id="add-department" type="button">Add</button>
           </div>
-          <table class="coverage-table">
-            <thead id="coverage-head"></thead>
-            <tbody id="coverage"></tbody>
-          </table>
+          <div id="departments" class="department-list"></div>
         </section>
       </div>
       <div class="toolbar">
@@ -382,6 +422,7 @@ PAGE = """<!doctype html>
           <button type="button" data-mode="desired">Desired</button>
           <button type="button" data-mode="not-desired">Not Desired</button>
         </div>
+        <select id="assignment-picker" class="assignment-picker"></select>
         <button id="back-setup" type="button">Back</button>
         <button id="optimize" class="primary" type="button">Optimize</button>
         <button id="logs-toggle" type="button" disabled>Logs</button>
@@ -412,13 +453,20 @@ PAGE = """<!doctype html>
   <script>
     const daysOfWeek = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
     const requestWeights = { desired: -2, "not-desired": 4 };
+    const defaultShiftColors = {
+      O: "#e6e8ec",
+      D: "#ffe08a",
+      N: "#5964d8",
+      F: "#d9c7ff",
+      R: "#bfe7e3",
+      H: "#f8b4c4",
+    };
 
     const setupView = document.getElementById("setup-view");
     const scheduleView = document.getElementById("schedule-view");
     const employeesEl = document.getElementById("employees");
     const weeksEl = document.getElementById("weeks");
-    const coverageHead = document.getElementById("coverage-head");
-    const coverageEl = document.getElementById("coverage");
+    const departmentsEl = document.getElementById("departments");
     const scheduleWrap = document.getElementById("schedule-wrap");
     const resultPanel = document.getElementById("result-panel");
     const resultWrap = document.getElementById("result-wrap");
@@ -428,6 +476,7 @@ PAGE = """<!doctype html>
     const logsToggle = document.getElementById("logs-toggle");
     const statusEl = document.getElementById("status");
     const optimizeButton = document.getElementById("optimize");
+    const assignmentPicker = document.getElementById("assignment-picker");
 
     let defaults = null;
     let shifts = [];
@@ -435,7 +484,7 @@ PAGE = """<!doctype html>
     let shiftNames = {};
     let coverShifts = [];
     let employeeNames = [];
-    let weeklyCoverDemands = [];
+    let departments = [];
     let activeMode = "fixed";
     let assignments = new Map();
     let selectedCell = null;
@@ -447,6 +496,18 @@ PAGE = """<!doctype html>
 
     function shiftClass(shift) {
       return `shift-${String(shift).toLowerCase()}`;
+    }
+
+    function readableTextColor(hexColor) {
+      const value = String(hexColor || "").replace("#", "");
+      if (value.length !== 6) {
+        return "#1f2937";
+      }
+      const red = parseInt(value.slice(0, 2), 16);
+      const green = parseInt(value.slice(2, 4), 16);
+      const blue = parseInt(value.slice(4, 6), 16);
+      const brightness = (red * 299 + green * 587 + blue * 114) / 1000;
+      return brightness > 145 ? "#1f2937" : "#ffffff";
     }
 
     function assignmentKey(worker, day) {
@@ -502,33 +563,247 @@ PAGE = """<!doctype html>
       }));
     }
 
-    function renderCoverage() {
-      const header = document.createElement("tr");
-      header.append(makeCell("th", "Day"));
-      coverShifts.forEach((shift) => {
-        header.append(makeCell("th", shift));
+    function normalizeRequirements(requirements) {
+      const normalized = Array.isArray(requirements) ? requirements.slice(0, 7) : [];
+      while (normalized.length < 7) {
+        normalized.push(0);
+      }
+      return normalized.map((value) => Math.max(0, Number(value || 0)));
+    }
+
+    function normalizeColor(color, shift) {
+      const value = String(color || "");
+      if (/^#[0-9a-fA-F]{6}$/.test(value)) {
+        return value;
+      }
+      return defaultShiftColors[shift] || "#9dd7ff";
+    }
+
+    function slug(value) {
+      return String(value || "")
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "") || "department";
+    }
+
+    function normalizeDepartment(department, index) {
+      const fallbackShift = coverShifts[0] || "D";
+      const shift = coverShifts.includes(department?.shift) ? department.shift : fallbackShift;
+      const fallbackName = `${shiftNames[shift] || shift} ${index + 1}`;
+      const name = String(department?.name || fallbackName).trim() || fallbackName;
+      const symbol = String(department?.symbol || shift).trim().slice(0, 3).toUpperCase() || shift;
+      return {
+        id: String(department?.id || slug(name || `${shift}-${index + 1}`)),
+        name,
+        shift,
+        symbol,
+        color: normalizeColor(department?.color, shift),
+        requirements: normalizeRequirements(department?.requirements),
+      };
+    }
+
+    function normalizeDepartmentList(departmentList) {
+      const used = new Set();
+      return departmentList.map((department, index) => {
+        const normalized = normalizeDepartment(department, index);
+        const baseId = slug(normalized.id);
+        let id = baseId;
+        let suffix = 2;
+        while (used.has(id)) {
+          id = `${baseId}-${suffix}`;
+          suffix += 1;
+        }
+        used.add(id);
+        return { ...normalized, id };
       });
-      coverageHead.replaceChildren(header);
+    }
 
-      coverageEl.replaceChildren(...daysOfWeek.map((day, dayIndex) => {
-        const row = document.createElement("tr");
-        row.append(makeCell("th", day));
+    function departmentsFromWeeklyCoverDemands(weeklyCoverDemands) {
+      return coverShifts.map((shift, shiftIndex) => normalizeDepartment({
+        id: slug(shift),
+        name: shiftNames[shift] || shift,
+        shift,
+        symbol: shift,
+        color: defaultShiftColors[shift],
+        requirements: daysOfWeek.map((_, dayIndex) => weeklyCoverDemands[dayIndex]?.[shiftIndex] ?? 0),
+      }, shiftIndex));
+    }
 
-        for (let shift = 0; shift < coverShifts.length; shift += 1) {
-          const cell = document.createElement("td");
+    function makeLabel(text, control) {
+      const label = document.createElement("label");
+      label.append(text, control);
+      return label;
+    }
+
+    function renderDepartments() {
+      departmentsEl.replaceChildren(...departments.map((department, index) => {
+        const row = document.createElement("div");
+        row.className = "department-row";
+
+        const main = document.createElement("div");
+        main.className = "department-main";
+
+        const name = document.createElement("input");
+        name.value = department.name;
+        name.addEventListener("input", () => {
+          departments[index].name = name.value;
+        });
+
+        const shift = document.createElement("select");
+        coverShifts.forEach((shiftCode) => {
+          const option = document.createElement("option");
+          option.value = shiftCode;
+          option.textContent = `${shiftNames[shiftCode] || shiftCode} (${shiftCode})`;
+          shift.append(option);
+        });
+        shift.value = department.shift;
+        shift.addEventListener("change", () => {
+          departments[index].shift = shift.value;
+        });
+
+        const symbol = document.createElement("input");
+        symbol.value = department.symbol;
+        symbol.maxLength = 3;
+        symbol.addEventListener("input", () => {
+          departments[index].symbol = symbol.value.trim().slice(0, 3).toUpperCase();
+        });
+
+        const color = document.createElement("input");
+        color.type = "color";
+        color.className = "color-input";
+        color.value = department.color;
+        color.addEventListener("input", () => {
+          departments[index].color = color.value;
+        });
+
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "icon-button";
+        remove.textContent = "x";
+        remove.addEventListener("click", () => {
+          departments.splice(index, 1);
+          renderDepartments();
+        });
+
+        main.append(
+          makeLabel("Name", name),
+          makeLabel("Shift", shift),
+          makeLabel("Symbol", symbol),
+          makeLabel("Color", color),
+          remove,
+        );
+
+        const requirements = document.createElement("div");
+        requirements.className = "department-requirements";
+        daysOfWeek.forEach((day, dayIndex) => {
           const input = document.createElement("input");
           input.type = "number";
           input.min = "0";
           input.step = "1";
-          input.value = weeklyCoverDemands[dayIndex]?.[shift] ?? 0;
+          input.value = department.requirements[dayIndex] ?? 0;
           input.addEventListener("input", () => {
-            weeklyCoverDemands[dayIndex][shift] = Number(input.value || 0);
+            departments[index].requirements[dayIndex] = Math.max(0, Number(input.value || 0));
           });
-          cell.append(input);
-          row.append(cell);
-        }
+          requirements.append(makeLabel(day, input));
+        });
+
+        row.append(main, requirements);
         return row;
       }));
+      renderAssignmentPicker();
+    }
+
+    function weeklyCoverDemandsFromDepartments() {
+      return daysOfWeek.map((_, dayIndex) => coverShifts.map((shift) => (
+        departments
+          .filter((department) => department.shift === shift)
+          .reduce((sum, department) => sum + Number(department.requirements[dayIndex] || 0), 0)
+      )));
+    }
+
+    function departmentMap() {
+      return new Map(departments.map((department) => [department.id, department]));
+    }
+
+    function selectedPickerAssignment() {
+      const value = assignmentPicker.value || "";
+      if (!value) {
+        return null;
+      }
+      const [kind, id] = value.split(":", 2);
+      if (kind === "shift" && validShift(id)) {
+        return { kind: "shift", shift: id };
+      }
+      if (kind === "department" && departmentMap().has(id)) {
+        return { kind: "department", department_id: id };
+      }
+      return null;
+    }
+
+    function assignmentText(assignment) {
+      if (!assignment) {
+        return "";
+      }
+      if (assignment.kind === "department") {
+        const department = departmentMap().get(assignment.department_id);
+        return department?.symbol || "?";
+      }
+      return assignment.shift || "";
+    }
+
+    function assignmentTitle(assignment) {
+      if (!assignment) {
+        return "";
+      }
+      if (assignment.kind === "department") {
+        const department = departmentMap().get(assignment.department_id);
+        return department ? `${department.name} (${department.shift})` : assignment.department_id;
+      }
+      return `${shiftNames[assignment.shift] || assignment.shift} (${assignment.shift})`;
+    }
+
+    function renderAssignmentPicker() {
+      const options = [];
+      const clear = document.createElement("option");
+      clear.value = "";
+      clear.textContent = "Clear cell";
+      options.push(clear);
+
+      const shiftGroup = document.createElement("optgroup");
+      shiftGroup.label = "Shifts";
+      shifts.forEach((shift) => {
+        const option = document.createElement("option");
+        option.value = `shift:${shift}`;
+        option.textContent = `${shiftNames[shift] || shift} (${shift})`;
+        shiftGroup.append(option);
+      });
+      options.push(shiftGroup);
+
+      coverShifts.forEach((shift) => {
+        const shiftDepartments = departments.filter((department) => department.shift === shift);
+        if (shiftDepartments.length === 0) {
+          return;
+        }
+        const group = document.createElement("optgroup");
+        group.label = `${shiftNames[shift] || shift} departments`;
+        shiftDepartments.forEach((department) => {
+          const option = document.createElement("option");
+          option.value = `department:${department.id}`;
+          option.textContent = `${department.symbol}: ${department.name}`;
+          group.append(option);
+        });
+        options.push(group);
+      });
+
+      const previous = assignmentPicker.value;
+      assignmentPicker.replaceChildren(...options);
+      if ([...assignmentPicker.options].some((option) => option.value === previous)) {
+        assignmentPicker.value = previous;
+      } else {
+        const defaultShift = shifts.includes("D") ? "D" : shifts[0];
+        assignmentPicker.value = defaultShift ? `shift:${defaultShift}` : "";
+      }
     }
 
     function syncSetupForm() {
@@ -536,6 +811,7 @@ PAGE = """<!doctype html>
         const trimmed = String(name).trim();
         return trimmed || `Worker ${index + 1}`;
       });
+      departments = normalizeDepartmentList(departments);
       weeksEl.value = String(Math.max(1, Number(weeksEl.value || 1)));
     }
 
@@ -559,14 +835,18 @@ PAGE = """<!doctype html>
         for (let day = 0; day < days; day += 1) {
           const key = assignmentKey(worker, day);
           const assignment = assignments.get(key);
-          const cell = makeCell("td", assignment?.shift || "", "schedule-cell");
+          const cell = makeCell("td", assignmentText(assignment), "schedule-cell");
           cell.tabIndex = 0;
           cell.dataset.worker = worker;
           cell.dataset.day = day;
+          cell.title = assignmentTitle(assignment);
           if (assignment) {
             cell.classList.add(assignment.type);
           }
-          cell.addEventListener("click", () => selectCell(cell));
+          cell.addEventListener("click", () => {
+            selectCell(cell);
+            applyPickerToCell(cell);
+          });
           cell.addEventListener("focus", () => selectCell(cell));
           cell.addEventListener("keydown", onCellKey);
           row.append(cell);
@@ -588,6 +868,26 @@ PAGE = """<!doctype html>
       setStatus(`${employeeNames[worker]} D${day}`);
     }
 
+    function applyPickerToCell(cell) {
+      const worker = Number(cell.dataset.worker);
+      const day = Number(cell.dataset.day);
+      const mapKey = assignmentKey(worker, day);
+      const assignment = selectedPickerAssignment();
+
+      if (!assignment) {
+        assignments.delete(mapKey);
+        renderScheduleEditor();
+        setStatus("Cleared");
+        return;
+      }
+
+      assignments.set(mapKey, { type: activeMode, ...assignment });
+      renderScheduleEditor();
+      const nextCell = scheduleWrap.querySelector(`[data-worker="${worker}"][data-day="${day}"]`);
+      nextCell?.focus();
+      setStatus(`${activeMode.replace("-", " ")} ${assignmentTitle(assignment)}`);
+    }
+
     function onCellKey(event) {
       const key = event.key.toUpperCase();
       const worker = Number(event.currentTarget.dataset.worker);
@@ -606,7 +906,7 @@ PAGE = """<!doctype html>
         return;
       }
 
-      assignments.set(mapKey, { type: activeMode, shift: key });
+      assignments.set(mapKey, { type: activeMode, kind: "shift", shift: key });
       renderScheduleEditor();
       const nextCell = scheduleWrap.querySelector(`[data-worker="${worker}"][data-day="${day}"]`);
       nextCell?.focus();
@@ -614,12 +914,22 @@ PAGE = """<!doctype html>
       event.preventDefault();
     }
 
-    function renderResultLegend(shifts) {
-      resultLegend.replaceChildren(...shifts.map((shift) => {
+    function renderResultLegend(schedule) {
+      const scheduleShifts = Array.isArray(schedule.shifts) ? schedule.shifts : [];
+      const scheduleDepartments = Array.isArray(schedule.departments) ? schedule.departments : departments;
+      const shiftItems = scheduleShifts.map((shift) => {
         const item = document.createElement("span");
         item.append(makeCell("i", "", `swatch ${shiftClass(shift)}`), `${shift}: ${shiftNames[shift] || "Shift"}`);
         return item;
-      }));
+      });
+      const departmentItems = scheduleDepartments.map((department) => {
+        const item = document.createElement("span");
+        const swatch = makeCell("i", "", "swatch");
+        swatch.style.background = department.color;
+        item.append(swatch, `${department.symbol}: ${department.name}`);
+        return item;
+      });
+      resultLegend.replaceChildren(...shiftItems, ...departmentItems);
     }
 
     function renderResult(schedule) {
@@ -627,6 +937,11 @@ PAGE = """<!doctype html>
       const days = Number(schedule.num_days || 0);
       const names = schedule.employee_names || employeeNames;
       const plan = Array.isArray(schedule.plan) ? schedule.plan : [];
+      const departmentPlan = Array.isArray(schedule.department_plan) ? schedule.department_plan : [];
+      const resultDepartments = new Map(
+        (Array.isArray(schedule.departments) ? schedule.departments : departments)
+          .map((department) => [department.id, department])
+      );
       const table = document.createElement("table");
       table.className = "result-table";
       const head = document.createElement("tr");
@@ -642,32 +957,66 @@ PAGE = """<!doctype html>
         row.append(makeCell("td", names[worker] || `Worker ${worker + 1}`, "worker"));
         for (let day = 0; day < days; day += 1) {
           const shift = plan[worker]?.[day] || "";
-          row.append(makeCell("td", shift, shift ? shiftClass(shift) : ""));
+          const department = resultDepartments.get(departmentPlan[worker]?.[day]);
+          const cell = makeCell("td", department?.symbol || shift, department ? "" : (shift ? shiftClass(shift) : ""));
+          if (department) {
+            cell.style.background = department.color;
+            cell.style.color = readableTextColor(department.color);
+            cell.title = `${department.name} (${department.shift})`;
+          }
+          row.append(cell);
         }
         table.append(row);
       }
 
       resultWrap.replaceChildren(table);
-      renderResultLegend(Array.isArray(schedule.shifts) ? schedule.shifts : []);
+      renderResultLegend(schedule);
       resultPanel.classList.remove("hidden");
     }
 
     function buildConfig() {
+      departments = normalizeDepartmentList(departments);
       const config = structuredClone(defaults);
       config.employee_names = [...employeeNames];
       config.num_employees = employeeNames.length;
       config.num_weeks = Number(weeksEl.value || 1);
-      config.weekly_cover_demands = weeklyCoverDemands.map((row) => row.map(Number));
+      config.departments = departments.map((department) => ({
+        ...department,
+        requirements: department.requirements.map(Number),
+      }));
+      config.weekly_cover_demands = weeklyCoverDemandsFromDepartments();
       config.fixed_assignments = [];
       config.requests = [];
+      config.department_fixed_assignments = [];
+      config.department_requests = [];
 
       for (const [key, assignment] of assignments.entries()) {
         const [worker, day] = key.split(":").map(Number);
-        const shift = assignment.shift;
-        if (worker >= config.num_employees || day >= config.num_weeks * 7 || !validShift(shift)) {
+        if (worker >= config.num_employees || day >= config.num_weeks * 7) {
           continue;
         }
 
+        if (assignment.kind === "department") {
+          if (!departmentMap().has(assignment.department_id)) {
+            continue;
+          }
+          if (assignment.type === "fixed") {
+            config.department_fixed_assignments.push([worker, assignment.department_id, day]);
+          } else {
+            config.department_requests.push([
+              worker,
+              assignment.department_id,
+              day,
+              requestWeights[assignment.type],
+            ]);
+          }
+          continue;
+        }
+
+        const shift = assignment.shift;
+        if (!validShift(shift)) {
+          continue;
+        }
         if (assignment.type === "fixed") {
           config.fixed_assignments.push([worker, shift, day]);
         } else {
@@ -711,8 +1060,22 @@ PAGE = """<!doctype html>
       renderEmployees();
     });
 
+    document.getElementById("add-department").addEventListener("click", () => {
+      const shift = coverShifts[0] || "D";
+      departments.push(normalizeDepartment({
+        id: `${slug(shift)}-${departments.length + 1}`,
+        name: `${shiftNames[shift] || shift} ${departments.length + 1}`,
+        shift,
+        symbol: shift,
+        color: defaultShiftColors[shift],
+        requirements: Array(7).fill(0),
+      }, departments.length));
+      renderDepartments();
+    });
+
     document.getElementById("build-schedule").addEventListener("click", () => {
       syncSetupForm();
+      renderAssignmentPicker();
       setupView.classList.add("hidden");
       scheduleView.classList.remove("hidden");
       resultPanel.classList.add("hidden");
@@ -753,7 +1116,7 @@ PAGE = """<!doctype html>
       try {
         const response = await fetch("/defaults", { cache: "no-store" });
         defaults = await response.json();
-        shifts = defaults.shifts || ["O", "D", "N", "F", "R"];
+        shifts = defaults.shifts || ["O", "D", "N", "F", "R", "H"];
         shiftAttributes = defaults.shift_attributes || {};
         shiftNames = Object.fromEntries(shifts.map((shift) => [
           shift,
@@ -761,26 +1124,23 @@ PAGE = """<!doctype html>
         ]));
         coverShifts = shifts.filter((shift) => shiftAttributes[shift]?.covers_demand);
         if (coverShifts.length === 0) {
-          coverShifts = shifts.filter((shift) => !["O", "F", "R"].includes(shift));
+          coverShifts = shifts.filter((shift) => !["O", "F", "R", "H"].includes(shift));
         }
         employeeNames = defaults.employee_names || Array.from(
           { length: Number(defaults.num_employees || 1) },
           (_, index) => `Worker ${index + 1}`,
         );
-        weeklyCoverDemands = (defaults.weekly_cover_demands || []).map((row) => {
-          const normalized = [...row];
-          while (normalized.length < coverShifts.length) {
-            normalized.push(0);
-          }
-          return normalized.slice(0, coverShifts.length);
-        });
-        while (weeklyCoverDemands.length < 7) {
-          weeklyCoverDemands.push(Array(coverShifts.length).fill(0));
+        if (Array.isArray(defaults.departments) && defaults.departments.length > 0) {
+          departments = normalizeDepartmentList(defaults.departments);
+        } else {
+          departments = normalizeDepartmentList(
+            departmentsFromWeeklyCoverDemands(defaults.weekly_cover_demands || [])
+          );
         }
         weeksEl.value = defaults.num_weeks || 1;
         setLatestLog("");
         renderEmployees();
-        renderCoverage();
+        renderDepartments();
         setStatus("Ready");
       } catch (error) {
         setStatus(`Error: ${error.message}`);
@@ -896,7 +1256,7 @@ class ScheduleHandler(BaseHTTPRequestHandler):
                 raise ValueError("Config payload must be a JSON object")
             log_stream = io.StringIO()
             with contextlib.redirect_stdout(log_stream):
-                result = solve_shift_scheduling(config, SOLVER_PARAMS, "")
+                result = solve_schedule(config, SOLVER_PARAMS, "")
             log = log_stream.getvalue()
         except Exception as exc:
             log = log or str(exc)

@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+
+# Local editor and environment files.
+.DS_Store
+.env
+.venv/
+
+# Optional solver/debug outputs.
+*.log
+*.pb.txt
+*.proto.txt
+*.departments.*
