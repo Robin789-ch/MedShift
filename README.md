@@ -1,10 +1,8 @@
 # SchedulePlanner
 
 SchedulePlanner is a small OR-Tools CP-SAT shift scheduler with a lightweight
-development UI. It solves schedules in two stages:
-
-1. Assign each employee a broad day type: `O`, `D`, `N`, `F`, `R`, or `H`.
-2. Assign concrete departments inside solved `D` and `N` cells.
+development UI. It solves broad day types and department assignments in one
+CP-SAT model.
 
 The frontend is intentionally simple: a single Python stdlib web server that
 lets you create employees, departments, fixed assignments, requests, run the
@@ -47,21 +45,6 @@ Run the optimizer from the command line:
 When the frontend server is listening on port `8000`, the CLI run also posts the
 latest solved schedule to the UI.
 
-Run the experimental single-stage optimizer in parallel:
-
-```sh
-./ortools/bin/python -B frontend_server_single_stage.py --port 8001
-./ortools/bin/python -B scheduler_single_stage.py --config=config.toml --params=max_time_in_seconds:10.0
-```
-
-The copied single-stage CLI posts to `http://127.0.0.1:8001/schedule` by
-default, leaving the baseline two-stage server on port `8000`.
-
-The single-stage UI also exposes optional weekly hour caps. Leave
-`max_hours_per_week` blank for no cap, or set it with department
-`duration_hours` values to limit each employee's assigned department hours per
-week.
-
 ## Frontend Workflow
 
 The UI has two main steps:
@@ -83,7 +66,7 @@ in the optional logs drawer.
 
 - `GET /`: serves the UI.
 - `GET /defaults`: returns the default config built from `config.toml`.
-- `POST /optimize`: accepts a config JSON payload, runs both optimizer stages,
+- `POST /optimize`: accepts a config JSON payload, runs the optimizer,
   and returns `{ ok, schedule, log }` style state.
 - `GET /schedule`: returns the latest stored schedule, or `204` if none exists.
 - `POST /schedule`: stores an already-solved schedule payload.
@@ -112,12 +95,13 @@ name = "Day"
 shift = "D"
 symbol = "D"
 color = "#ffe08a"
+duration_hours = 8
 requirements = [5, 5, 4, 5, 4, 3, 4]
 ```
 
-Department demand is the source of truth. Stage one derives exact `D` and `N`
-cover requirements from department requirements. Stage two then assigns one
-department to every employee/day cell that stage one marked as `D` or `N`.
+Department demand is the source of truth. The solver links each department
+assignment to its broad shift, so exact department cover, broad shift sequence
+rules, hour caps, requests, and department continuity are optimized together.
 
 ## Constraint Inputs
 
@@ -155,19 +139,36 @@ department_requests = [
 ]
 ```
 
-Desired department requests also project to stage one as broad `D` or `N`
-requests. Not-desired department requests remain stage-two-only.
+Department requests are handled through the linked department variables.
+Positive request weights penalize unwanted assignments; negative weights reward
+desired assignments.
+
+Optional weekly hour caps use:
+
+```toml
+max_hours_per_week = 50
+```
+
+Department work contributes each department's `duration_hours`. Non-department
+shift durations can be configured under `shift_attributes`; by default,
+formation (`F`) and recovery (`R`) count as 8 hours, while holidays (`H`) count
+as 0.
+
+Pending overtime balances can be entered per employee:
+
+```toml
+employee_overtime_hours = [0, 8, 16]
+```
+
+The solver uses those balances to prefer recovery days for employees with the
+largest remaining overtime, while penalizing recovery assigned beyond an
+employee's pending balance. Coefficients live under `[overtime_balance]`.
 
 ## Solver Logs
 
-Stage one prints OR-Tools objective improvements, shift penalties/gains, and
-solver stats. Stage two prints one section per broad department shift, labeled
-status, penalties/gains, and solver stats. Stage-two objective iterations appear
-when the subproblem has objective terms, for example department requests or
-multi-department switch penalties.
-
-The old stage-one schedule table is intentionally no longer printed; the UI
-result table is the schedule view.
+The solver prints OR-Tools objective improvements, selected penalties/gains, and
+solver stats. The CLI no longer prints a schedule table; the UI result table is
+the schedule view.
 
 ## Validation
 

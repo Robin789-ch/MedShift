@@ -1,6 +1,7 @@
 num_employees = 8
 num_weeks = 3
 shifts = ["O", "D", "N", "F", "R", "H"]
+employee_overtime_hours = [0, 0, 0, 0, 0, 0, 0, 0]
 
 # Fixed assignment: [employee, shift, day].
 # This fixes the first 2 days of the schedule.
@@ -123,6 +124,7 @@ counts_as_weekly_off = false
 is_night = false
 requires_fixed_assignment = true
 requires_assignment_request = false
+duration_hours = 8
 
 [shift_attributes.R]
 name = "Recovery"
@@ -132,6 +134,7 @@ counts_as_weekly_off = false
 is_night = false
 requires_fixed_assignment = false
 requires_assignment_request = false
+duration_hours = 8
 
 [shift_attributes.H]
 name = "Holiday"
@@ -141,8 +144,15 @@ counts_as_weekly_off = false
 is_night = false
 requires_fixed_assignment = false
 requires_assignment_request = true
+duration_hours = 0
 
 [work_balance]
 night_shift = "N"
 night_cost = 20
 work_cost = 5
+
+[overtime_balance]
+recovery_shift = "R"
+max_remaining_cost = 4
+remaining_cost = 1
+over_recovery_cost = 20

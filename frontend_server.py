@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tiny development server for configuring and visualizing shift schedules."""
+"""Development server for configuring and visualizing schedules."""
 
 from __future__ import annotations
 
@@ -164,8 +164,18 @@ PAGE = """<!doctype html>
 
     .employee-row {
       display: grid;
-      grid-template-columns: 1fr 36px;
+      grid-template-columns: minmax(140px, 1fr) 104px 36px;
       gap: 8px;
+      align-items: end;
+    }
+
+    .employee-row label {
+      min-width: 0;
+    }
+
+    .employee-row input {
+      width: 100%;
+      min-width: 0;
     }
 
     .department-list {
@@ -187,9 +197,19 @@ PAGE = """<!doctype html>
 
     .department-main {
       display: grid;
-      grid-template-columns: minmax(160px, 1fr) 94px 92px 50px 36px;
+      grid-template-columns: minmax(120px, 1fr) minmax(96px, 122px) 72px 76px 56px 36px;
       gap: 8px;
       align-items: end;
+    }
+
+    .department-main label {
+      min-width: 0;
+    }
+
+    .department-main input,
+    .department-main select {
+      width: 100%;
+      min-width: 0;
     }
 
     .department-requirements {
@@ -204,13 +224,14 @@ PAGE = """<!doctype html>
     }
 
     .color-input {
-      width: 50px;
+      width: 56px;
       padding: 3px;
     }
 
     .icon-button {
       width: 36px;
       padding: 0;
+      justify-self: end;
     }
 
     .schedule-table,
@@ -400,6 +421,10 @@ PAGE = """<!doctype html>
             Weeks
             <input id="weeks" type="number" min="1" max="12" step="1">
           </label>
+          <label style="margin-top: 14px;">
+            Max hours/week
+            <input id="max-hours-week" type="number" min="1" max="168" step="1">
+          </label>
         </section>
 
         <section class="panel">
@@ -466,6 +491,7 @@ PAGE = """<!doctype html>
     const scheduleView = document.getElementById("schedule-view");
     const employeesEl = document.getElementById("employees");
     const weeksEl = document.getElementById("weeks");
+    const maxHoursWeekEl = document.getElementById("max-hours-week");
     const departmentsEl = document.getElementById("departments");
     const scheduleWrap = document.getElementById("schedule-wrap");
     const resultPanel = document.getElementById("result-panel");
@@ -484,6 +510,7 @@ PAGE = """<!doctype html>
     let shiftNames = {};
     let coverShifts = [];
     let employeeNames = [];
+    let employeeOvertimeHours = [];
     let departments = [];
     let activeMode = "fixed";
     let assignments = new Map();
@@ -548,6 +575,17 @@ PAGE = """<!doctype html>
           employeeNames[index] = input.value;
         });
 
+        const overtime = document.createElement("input");
+        overtime.type = "number";
+        overtime.min = "0";
+        overtime.max = "1000";
+        overtime.step = "1";
+        overtime.value = employeeOvertimeHours[index] ?? 0;
+        overtime.title = "Pending overtime hours";
+        overtime.addEventListener("input", () => {
+          employeeOvertimeHours[index] = normalizeOvertimeHours(overtime.value);
+        });
+
         const remove = document.createElement("button");
         remove.type = "button";
         remove.className = "icon-button";
@@ -555,10 +593,11 @@ PAGE = """<!doctype html>
         remove.disabled = employeeNames.length === 1;
         remove.addEventListener("click", () => {
           employeeNames.splice(index, 1);
+          employeeOvertimeHours.splice(index, 1);
           renderEmployees();
         });
 
-        row.append(input, remove);
+        row.append(makeLabel("Name", input), makeLabel("Overtime", overtime), remove);
         return row;
       }));
     }
@@ -569,6 +608,35 @@ PAGE = """<!doctype html>
         normalized.push(0);
       }
       return normalized.map((value) => Math.max(0, Number(value || 0)));
+    }
+
+    function defaultDurationHours(shift) {
+      return shift === "N" ? 12 : 8;
+    }
+
+    function normalizeDurationHours(value, shift) {
+      const fallback = defaultDurationHours(shift);
+      const number = Number(value);
+      if (!Number.isFinite(number) || number <= 0) {
+        return fallback;
+      }
+      return Math.max(1, Math.min(24, Math.round(number)));
+    }
+
+    function normalizeMaxHours(value) {
+      const number = Number(value);
+      if (!Number.isFinite(number) || number <= 0) {
+        return null;
+      }
+      return Math.max(1, Math.min(168, Math.round(number)));
+    }
+
+    function normalizeOvertimeHours(value) {
+      const number = Number(value);
+      if (!Number.isFinite(number) || number <= 0) {
+        return 0;
+      }
+      return Math.max(0, Math.min(1000, Math.round(number)));
     }
 
     function normalizeColor(color, shift) {
@@ -599,6 +667,7 @@ PAGE = """<!doctype html>
         shift,
         symbol,
         color: normalizeColor(department?.color, shift),
+        duration_hours: normalizeDurationHours(department?.duration_hours, shift),
         requirements: normalizeRequirements(department?.requirements),
       };
     }
@@ -626,6 +695,7 @@ PAGE = """<!doctype html>
         shift,
         symbol: shift,
         color: defaultShiftColors[shift],
+        duration_hours: defaultDurationHours(shift),
         requirements: daysOfWeek.map((_, dayIndex) => weeklyCoverDemands[dayIndex]?.[shiftIndex] ?? 0),
       }, shiftIndex));
     }
@@ -660,6 +730,23 @@ PAGE = """<!doctype html>
         shift.value = department.shift;
         shift.addEventListener("change", () => {
           departments[index].shift = shift.value;
+          departments[index].duration_hours = normalizeDurationHours(
+            departments[index].duration_hours,
+            shift.value,
+          );
+        });
+
+        const duration = document.createElement("input");
+        duration.type = "number";
+        duration.min = "1";
+        duration.max = "24";
+        duration.step = "1";
+        duration.value = department.duration_hours;
+        duration.addEventListener("input", () => {
+          departments[index].duration_hours = normalizeDurationHours(
+            duration.value,
+            departments[index].shift,
+          );
         });
 
         const symbol = document.createElement("input");
@@ -689,6 +776,7 @@ PAGE = """<!doctype html>
         main.append(
           makeLabel("Name", name),
           makeLabel("Shift", shift),
+          makeLabel("Hours", duration),
           makeLabel("Symbol", symbol),
           makeLabel("Color", color),
           remove,
@@ -811,8 +899,13 @@ PAGE = """<!doctype html>
         const trimmed = String(name).trim();
         return trimmed || `Worker ${index + 1}`;
       });
+      employeeOvertimeHours = employeeNames.map((_, index) => (
+        normalizeOvertimeHours(employeeOvertimeHours[index])
+      ));
       departments = normalizeDepartmentList(departments);
       weeksEl.value = String(Math.max(1, Number(weeksEl.value || 1)));
+      const maxHours = normalizeMaxHours(maxHoursWeekEl.value);
+      maxHoursWeekEl.value = maxHours === null ? "" : String(maxHours);
     }
 
     function renderScheduleEditor() {
@@ -978,10 +1071,20 @@ PAGE = """<!doctype html>
       departments = normalizeDepartmentList(departments);
       const config = structuredClone(defaults);
       config.employee_names = [...employeeNames];
+      config.employee_overtime_hours = employeeNames.map((_, index) => (
+        normalizeOvertimeHours(employeeOvertimeHours[index])
+      ));
       config.num_employees = employeeNames.length;
       config.num_weeks = Number(weeksEl.value || 1);
+      const maxHours = normalizeMaxHours(maxHoursWeekEl.value);
+      if (maxHours === null) {
+        delete config.max_hours_per_week;
+      } else {
+        config.max_hours_per_week = maxHours;
+      }
       config.departments = departments.map((department) => ({
         ...department,
+        duration_hours: Number(department.duration_hours),
         requirements: department.requirements.map(Number),
       }));
       config.weekly_cover_demands = weeklyCoverDemandsFromDepartments();
@@ -1057,6 +1160,7 @@ PAGE = """<!doctype html>
 
     document.getElementById("add-employee").addEventListener("click", () => {
       employeeNames.push(`Worker ${employeeNames.length + 1}`);
+      employeeOvertimeHours.push(0);
       renderEmployees();
     });
 
@@ -1068,6 +1172,7 @@ PAGE = """<!doctype html>
         shift,
         symbol: shift,
         color: defaultShiftColors[shift],
+        duration_hours: defaultDurationHours(shift),
         requirements: Array(7).fill(0),
       }, departments.length));
       renderDepartments();
@@ -1130,6 +1235,9 @@ PAGE = """<!doctype html>
           { length: Number(defaults.num_employees || 1) },
           (_, index) => `Worker ${index + 1}`,
         );
+        employeeOvertimeHours = employeeNames.map((_, index) => (
+          normalizeOvertimeHours(defaults.employee_overtime_hours?.[index])
+        ));
         if (Array.isArray(defaults.departments) && defaults.departments.length > 0) {
           departments = normalizeDepartmentList(defaults.departments);
         } else {
@@ -1138,6 +1246,7 @@ PAGE = """<!doctype html>
           );
         }
         weeksEl.value = defaults.num_weeks || 1;
+        maxHoursWeekEl.value = defaults.max_hours_per_week || "";
         setLatestLog("");
         renderEmployees();
         renderDepartments();
@@ -1159,6 +1268,10 @@ def default_config() -> dict[str, Any]:
     config.setdefault(
         "employee_names",
         [f"Worker {index + 1}" for index in range(int(config["num_employees"]))],
+    )
+    config.setdefault(
+        "employee_overtime_hours",
+        [0 for _ in range(int(config["num_employees"]))],
     )
     return config
 
