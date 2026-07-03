@@ -1,19 +1,111 @@
 # MedShift
 
-MedShift is a small hospital shift-planning app. It helps build a staff
-schedule with broad shift types, concrete department assignments, fixed days,
-requests, weekly hour limits, and overtime recovery.
+MedShift is a small local web app for planning hospital employee schedules. It
+helps you turn staffing needs, employee availability, fixed assignments, shift
+preferences, weekly hour limits, and overtime recovery into an optimized roster.
 
-It runs locally in your browser. There is no database and no account system.
+The app runs in your browser, but everything stays on your machine. There is no
+database, no account system, and no hosted service to configure.
 
-## What It Can Do
+## What MedShift Helps With
 
-- Plan multiple weeks at once.
-- Configure employees and pending overtime hours.
-- Configure departments, weekday staffing needs, shift length, symbol, and color.
-- Mark fixed assignments, desired assignments, and not-desired assignments.
-- Optimize a schedule with Google OR-Tools.
-- View the result table and solver logs in the browser.
+- Configure employees, overtime balances, departments, shift symbols, colors,
+  and weekly staffing needs.
+- Mark fixed assignments, desired shifts, and not-desired shifts directly on a
+  planning grid.
+- Generate an optimized schedule with Google OR-Tools.
+- Review the finished roster and inspect solver logs from the browser.
+- Run the same scheduler from the command line when you want a quick solve.
+
+## Screenshots
+
+### Configure Employees And Departments
+
+Set up the employees, planning horizon, maximum weekly hours, and department
+requirements before optimizing.
+
+![Configuration editor](docs/images/config-editor.png)
+
+### Add Constraints And Preferences
+
+Paint fixed assignments, desired shifts, and not-desired shifts onto the grid.
+
+![Constraint grid](docs/images/constraint-grid.png)
+
+### Review The Optimized Schedule
+
+After optimization, MedShift shows the completed roster with color-coded shifts
+and department assignments.
+
+![Optimized schedule](docs/images/optimized-schedule.png)
+
+## Requirements
+
+- Python 3.11 or newer
+- `pip`
+- `git`
+
+Python 3.13 is recommended because that is the version used for the current
+local test environment.
+
+## Install And Run
+
+If your GitHub SSH access is already configured, copy and paste this full block:
+
+```sh
+git clone git@github.com:Robin789-ch/MedShift.git
+cd MedShift
+python3.13 -m venv .venv
+.venv/bin/python -m pip install --upgrade pip
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python -B frontend_server.py --port 8000
+```
+
+Then open:
+
+[http://127.0.0.1:8000](http://127.0.0.1:8000)
+
+Prefer HTTPS instead of SSH? Copy and paste this full block:
+
+```sh
+git clone https://github.com/Robin789-ch/MedShift.git
+cd MedShift
+python3.13 -m venv .venv
+.venv/bin/python -m pip install --upgrade pip
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python -B frontend_server.py --port 8000
+```
+
+If you do not have `python3.13`, use this Python 3.11+ version instead:
+
+```sh
+git clone git@github.com:Robin789-ch/MedShift.git
+cd MedShift
+python3 -m venv .venv
+.venv/bin/python -m pip install --upgrade pip
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python -B frontend_server.py --port 8000
+```
+
+Or, with HTTPS and Python 3.11+:
+
+```sh
+git clone https://github.com/Robin789-ch/MedShift.git
+cd MedShift
+python3 -m venv .venv
+.venv/bin/python -m pip install --upgrade pip
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python -B frontend_server.py --port 8000
+```
+
+## Basic Workflow
+
+1. Start the app and open [http://127.0.0.1:8000](http://127.0.0.1:8000).
+2. Configure employees, overtime balances, number of weeks, and departments.
+3. Click `Next`.
+4. Mark fixed assignments or requests on the grid.
+5. Click `Optimize`.
+6. Review the color-coded schedule and, if needed, open the solver logs.
 
 The default example uses these broad shifts:
 
@@ -24,51 +116,6 @@ The default example uses these broad shifts:
 - `R`: overtime recovery
 - `H`: holiday
 
-## Requirements
-
-- Python 3.11 or newer
-- `pip`
-
-Python 3.13 is recommended because that is the version used for the current
-local test environment.
-
-## Setup
-
-Create a virtual environment and install the pinned dependencies:
-
-```sh
-python3.13 -m venv .venv
-.venv/bin/python -m pip install -r requirements.txt
-```
-
-If `python3.13` is not installed, use another Python 3.11+ executable:
-
-```sh
-python3 -m venv .venv
-.venv/bin/python -m pip install -r requirements.txt
-```
-
-## Run The App
-
-Start the local web app:
-
-```sh
-.venv/bin/python -B frontend_server.py --port 8000
-```
-
-Open this URL:
-
-```text
-http://127.0.0.1:8000
-```
-
-In the app:
-
-1. Set employees, overtime balances, number of weeks, and departments.
-2. Click `Next`.
-3. Paint fixed assignments or requests onto the grid.
-4. Click `Optimize`.
-
 ## Run From The Command Line
 
 You can also solve the example config without opening the browser:
@@ -77,8 +124,8 @@ You can also solve the example config without opening the browser:
 .venv/bin/python -B scheduler.py --config=config.toml --params=max_time_in_seconds:10.0
 ```
 
-If the browser app is already running on port `8000`, the command also sends
-the latest solved schedule to the app.
+If the browser app is already running on port `8000`, the command also sends the
+latest solved schedule to the app.
 
 ## Customize The Example
 
@@ -152,8 +199,8 @@ Run the test suite:
 .venv/bin/python -B -m unittest discover
 ```
 
-## Status
+## Project Status
 
-This project is ready for local testing, but it is still a small prototype. The
-optimizer can report no feasible solution if the staffing requirements,
-fixed assignments, and hour limits conflict.
+MedShift is ready for local testing and experimentation. It is still a small
+prototype, so the optimizer can report that no feasible solution exists when
+staffing requirements, fixed assignments, requests, and hour limits conflict.
