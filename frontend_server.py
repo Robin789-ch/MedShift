@@ -272,9 +272,12 @@ PAGE = """<!doctype html>
     .not-desired { background: #fde2e2; color: #7f1d1d; }
 
     .shift-o { background: #e6e8ec; color: #384252; }
+    .shift-d { background: #ffe08a; color: #4f3400; }
     .shift-m { background: #ffe08a; color: #4f3400; }
     .shift-a { background: #9dd7ff; color: #07385c; }
     .shift-n { background: #5964d8; color: white; }
+    .shift-f { background: #d9c7ff; color: #39206b; }
+    .shift-r { background: #bfe7e3; color: #164e47; }
 
     #status {
       color: #667085;
@@ -362,9 +365,7 @@ PAGE = """<!doctype html>
             <h2>Weekly Cover Demand</h2>
           </div>
           <table class="coverage-table">
-            <thead>
-              <tr><th>Day</th><th>M</th><th>A</th><th>N</th></tr>
-            </thead>
+            <thead id="coverage-head"></thead>
             <tbody id="coverage"></tbody>
           </table>
         </section>
@@ -410,13 +411,13 @@ PAGE = """<!doctype html>
 
   <script>
     const daysOfWeek = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-    const shiftNames = { O: "Off", M: "Morning", A: "Afternoon", N: "Night" };
     const requestWeights = { desired: -2, "not-desired": 4 };
 
     const setupView = document.getElementById("setup-view");
     const scheduleView = document.getElementById("schedule-view");
     const employeesEl = document.getElementById("employees");
     const weeksEl = document.getElementById("weeks");
+    const coverageHead = document.getElementById("coverage-head");
     const coverageEl = document.getElementById("coverage");
     const scheduleWrap = document.getElementById("schedule-wrap");
     const resultPanel = document.getElementById("result-panel");
@@ -429,6 +430,10 @@ PAGE = """<!doctype html>
     const optimizeButton = document.getElementById("optimize");
 
     let defaults = null;
+    let shifts = [];
+    let shiftAttributes = {};
+    let shiftNames = {};
+    let coverShifts = [];
     let employeeNames = [];
     let weeklyCoverDemands = [];
     let activeMode = "fixed";
@@ -436,8 +441,8 @@ PAGE = """<!doctype html>
     let selectedCell = null;
     let latestLog = "";
 
-    function shiftIndex(shift) {
-      return ["O", "M", "A", "N"].indexOf(shift);
+    function validShift(shift) {
+      return shifts.includes(shift);
     }
 
     function shiftClass(shift) {
@@ -498,11 +503,18 @@ PAGE = """<!doctype html>
     }
 
     function renderCoverage() {
+      const header = document.createElement("tr");
+      header.append(makeCell("th", "Day"));
+      coverShifts.forEach((shift) => {
+        header.append(makeCell("th", shift));
+      });
+      coverageHead.replaceChildren(header);
+
       coverageEl.replaceChildren(...daysOfWeek.map((day, dayIndex) => {
         const row = document.createElement("tr");
         row.append(makeCell("th", day));
 
-        for (let shift = 0; shift < 3; shift += 1) {
+        for (let shift = 0; shift < coverShifts.length; shift += 1) {
           const cell = document.createElement("td");
           const input = document.createElement("input");
           input.type = "number";
@@ -590,7 +602,7 @@ PAGE = """<!doctype html>
         return;
       }
 
-      if (!["O", "M", "A", "N"].includes(key)) {
+      if (!validShift(key)) {
         return;
       }
 
@@ -651,8 +663,8 @@ PAGE = """<!doctype html>
 
       for (const [key, assignment] of assignments.entries()) {
         const [worker, day] = key.split(":").map(Number);
-        const shift = shiftIndex(assignment.shift);
-        if (worker >= config.num_employees || day >= config.num_weeks * 7 || shift < 0) {
+        const shift = assignment.shift;
+        if (worker >= config.num_employees || day >= config.num_weeks * 7 || !validShift(shift)) {
           continue;
         }
 
@@ -741,13 +753,29 @@ PAGE = """<!doctype html>
       try {
         const response = await fetch("/defaults", { cache: "no-store" });
         defaults = await response.json();
+        shifts = defaults.shifts || ["O", "D", "N", "F", "R"];
+        shiftAttributes = defaults.shift_attributes || {};
+        shiftNames = Object.fromEntries(shifts.map((shift) => [
+          shift,
+          shiftAttributes[shift]?.name || shift,
+        ]));
+        coverShifts = shifts.filter((shift) => shiftAttributes[shift]?.covers_demand);
+        if (coverShifts.length === 0) {
+          coverShifts = shifts.filter((shift) => !["O", "F", "R"].includes(shift));
+        }
         employeeNames = defaults.employee_names || Array.from(
           { length: Number(defaults.num_employees || 1) },
           (_, index) => `Worker ${index + 1}`,
         );
-        weeklyCoverDemands = (defaults.weekly_cover_demands || []).map((row) => [...row]);
+        weeklyCoverDemands = (defaults.weekly_cover_demands || []).map((row) => {
+          const normalized = [...row];
+          while (normalized.length < coverShifts.length) {
+            normalized.push(0);
+          }
+          return normalized.slice(0, coverShifts.length);
+        });
         while (weeklyCoverDemands.length < 7) {
-          weeklyCoverDemands.push([0, 0, 0]);
+          weeklyCoverDemands.push(Array(coverShifts.length).fill(0));
         }
         weeksEl.value = defaults.num_weeks || 1;
         setLatestLog("");

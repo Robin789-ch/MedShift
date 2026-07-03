@@ -1,72 +1,105 @@
 num_employees = 8
 num_weeks = 3
-shifts = ["O", "M", "A", "N"]
+shifts = ["O", "D", "N", "F", "R"]
 
 # Fixed assignment: [employee, shift, day].
 # This fixes the first 2 days of the schedule.
 fixed_assignments = [
-  [0, 0, 0],
-  [1, 0, 0],
-  [2, 1, 0],
-  [3, 1, 0],
-  [4, 2, 0],
-  [5, 2, 0],
-  [6, 2, 3],
-  [0, 1, 1],
-  [1, 1, 1],
-  [2, 2, 1],
-  [3, 2, 1],
-  [4, 2, 1],
-  [5, 0, 1],
-  [6, 0, 1],
+  [0, "O", 0],
+  [1, "O", 0],
+  [2, "D", 0],
+  [3, "D", 0],
+  [4, "D", 0],
+  [5, "D", 0],
+  [6, "D", 3],
+  [0, "D", 1],
+  [1, "D", 1],
+  [2, "D", 1],
+  [3, "D", 1],
+  [4, "D", 1],
+  [5, "O", 1],
+  [6, "O", 1],
 ]
 
 # Request: [employee, shift, day, weight].
 # A negative weight indicates that the employee desires this assignment.
 requests = [
-  [3, 0, 5, -4],
-  [5, 3, 10, -4],
-  [2, 3, 4, 6],
+  [3, "O", 5, -4],
+  [5, "N", 10, -4],
+  [2, "N", 4, 6],
 ]
 
 # Shift constraints on continuous sequence:
 # [shift, hard_min, soft_min, min_penalty, soft_max, hard_max, max_penalty]
 shift_constraints = [
-  [0, 1, 1, 5, 7, 100, 0],
-  [1, 1, 3, 5, 5, 6, 0],
-  [2, 1, 3, 5, 5, 6, 0],
-  [3, 1, 2, 20, 3, 4, 5],
+  ["O", 1, 1, 5, 7, 100, 0],
+  ["D", 1, 2, 5, 5, 6, 0],
+  ["N", 1, 2, 20, 3, 4, 5],
 ]
 
 # Weekly sum constraints on shift days:
 # [shift, hard_min, soft_min, min_penalty, soft_max, hard_max, max_penalty]
 weekly_sum_constraints = [
-  [0, 1, 2, 7, 3, 7, 0],
+  ["O", 1, 2, 7, 3, 7, 0],
 ]
 
 # Penalized transitions:
 # [previous_shift, next_shift, penalty], where penalty = 0 means forbidden.
 penalized_transitions = [
-  [3, 1, 0],
+  ["N", "D", 0],
 ]
 
-# Daily demands for work shifts [morning, afternoon, night] for each day
-# of the week starting on Monday.
+# Daily demands for demand-covering shifts [day, night] for each day of the week
+# starting on Monday.
 weekly_cover_demands = [
-  [2, 3, 1],
-  [2, 3, 1],
-  [2, 2, 2],
-  [2, 3, 1],
-  [2, 2, 2],
-  [1, 2, 3],
-  [1, 3, 1],
+  [5, 1],
+  [5, 1],
+  [4, 2],
+  [5, 1],
+  [4, 2],
+  [3, 3],
+  [4, 1],
 ]
 
-# Penalty for exceeding the cover constraint per work shift type.
-excess_cover_penalties = [20, 20, 40]
+# Penalty for exceeding the cover constraint per demand-covering shift type.
+excess_cover_penalties = [20, 40]
+
+[shift_attributes.O]
+name = "Off"
+counts_as_work = false
+covers_demand = false
+counts_as_weekly_off = true
+is_night = false
+
+[shift_attributes.D]
+name = "Day"
+counts_as_work = true
+covers_demand = true
+counts_as_weekly_off = false
+is_night = false
+
+[shift_attributes.N]
+name = "Night"
+counts_as_work = true
+covers_demand = true
+counts_as_weekly_off = false
+is_night = true
+
+[shift_attributes.F]
+name = "Formation"
+counts_as_work = true
+covers_demand = false
+counts_as_weekly_off = false
+is_night = false
+
+[shift_attributes.R]
+name = "Recovery"
+counts_as_work = false
+covers_demand = false
+counts_as_weekly_off = false
+is_night = false
 
 [work_balance]
-off_shift = "O"
 night_shift = "N"
 night_cost = 30
 work_cost = 5

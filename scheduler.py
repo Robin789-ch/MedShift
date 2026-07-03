@@ -188,6 +188,33 @@ def shift_index(shifts: list[str], shift: int | str) -> int:
     raise ValueError(f"Unknown shift label: {shift}")
 
 
+def shift_attributes(config: dict[str, Any], shifts: list[str]) -> dict[str, dict[str, Any]]:
+    """Returns per-shift semantics, with conservative defaults."""
+    configured = config.get("shift_attributes", {})
+    attributes = {}
+    for shift in shifts:
+        attributes[shift] = {
+            "name": shift,
+            "counts_as_work": shift not in {"O", "R"},
+            "covers_demand": shift not in {"O", "F", "R"},
+            "counts_as_weekly_off": shift == "O",
+            "is_night": shift == "N",
+        }
+        attributes[shift].update(configured.get(shift, {}))
+    return attributes
+
+
+def shift_indices_with_attribute(
+    shifts: list[str], attributes: dict[str, dict[str, Any]], attribute: str
+) -> list[int]:
+    """Returns shift indices whose configured attribute is true."""
+    return [
+        index
+        for index, shift in enumerate(shifts)
+        if bool(attributes[shift].get(attribute, False))
+    ]
+
+
 def add_work_balancing_constraint(
     model: cp_model.CpModel,
     work: dict[tuple[int, int, int], cp_model.BoolVarT],
@@ -336,6 +363,7 @@ def solve_shift_scheduling(config: dict[str, Any], params: str, output_proto: st
     num_employees = int(config["num_employees"])
     num_weeks = int(config["num_weeks"])
     shifts = list(config["shifts"])
+    attributes = shift_attributes(config, shifts)
     employee_names = config.get("employee_names")
     fixed_assignments = config["fixed_assignments"]
     requests = config["requests"]
@@ -369,11 +397,13 @@ def solve_shift_scheduling(config: dict[str, Any], params: str, output_proto: st
             model.add_exactly_one(work[e, s, d] for s in range(num_shifts))
 
     # Fixed assignments.
-    for e, s, d in fixed_assignments:
+    for e, shift, d in fixed_assignments:
+        s = shift_index(shifts, shift)
         model.add(work[e, s, d] == 1)
 
     # Employee requests
-    for e, s, d, w in requests:
+    for e, shift, d, w in requests:
+        s = shift_index(shifts, shift)
         obj_bool_vars.append(work[e, s, d])
         obj_bool_coeffs.append(w)
 
@@ -382,11 +412,20 @@ def solve_shift_scheduling(config: dict[str, Any], params: str, output_proto: st
     night_balancing_cost = int(work_balance.get("night_cost", 0))
     work_balancing_cost = int(work_balance.get("work_cost", 0))
     if night_balancing_cost > 0 or work_balancing_cost > 0:
-        off_shift = shift_index(shifts, work_balance.get("off_shift", "O"))
+        work_shift_indices = shift_indices_with_attribute(
+            shifts, attributes, "counts_as_work"
+        )
         night_shift = None
         if night_balancing_cost > 0:
-            night_shift = shift_index(shifts, work_balance.get("night_shift", "N"))
-        work_shift_indices = [s for s in range(num_shifts) if s != off_shift]
+            if "night_shift" in work_balance:
+                night_shift = shift_index(shifts, work_balance["night_shift"])
+            else:
+                night_shifts = shift_indices_with_attribute(
+                    shifts, attributes, "is_night"
+                )
+                if not night_shifts:
+                    raise ValueError("night_cost requires a configured night shift")
+                night_shift = night_shifts[0]
         variables, coeffs = add_work_balancing_constraint(
             model,
             work,
@@ -403,7 +442,8 @@ def solve_shift_scheduling(config: dict[str, Any], params: str, output_proto: st
 
     # Shift constraints
     for ct in shift_constraints:
-        shift, hard_min, soft_min, min_cost, soft_max, hard_max, max_cost = ct
+        shift_ref, hard_min, soft_min, min_cost, soft_max, hard_max, max_cost = ct
+        shift = shift_index(shifts, shift_ref)
         for e in range(num_employees):
             works = [work[e, shift, d] for d in range(num_days)]
             variables, coeffs = add_soft_sequence_constraint(
@@ -415,14 +455,15 @@ def solve_shift_scheduling(config: dict[str, Any], params: str, output_proto: st
                 soft_max,
                 hard_max,
                 max_cost,
-                f"shift_constraint(employee {e}, shift {shift})",
+                f"shift_constraint(employee {e}, shift {shifts[shift]})",
             )
             obj_bool_vars.extend(variables)
             obj_bool_coeffs.extend(coeffs)
 
     # Weekly sum constraints
     for ct in weekly_sum_constraints:
-        shift, hard_min, soft_min, min_cost, soft_max, hard_max, max_cost = ct
+        shift_ref, hard_min, soft_min, min_cost, soft_max, hard_max, max_cost = ct
+        shift = shift_index(shifts, shift_ref)
         for e in range(num_employees):
             for w in range(num_weeks):
                 works = [work[e, shift, d + w * 7] for d in range(7)]
@@ -435,13 +476,15 @@ def solve_shift_scheduling(config: dict[str, Any], params: str, output_proto: st
                     soft_max,
                     hard_max,
                     max_cost,
-                    f"weekly_sum_constraint(employee {e}, shift {shift}, week {w})",
+                    f"weekly_sum_constraint(employee {e}, shift {shifts[shift]}, week {w})",
                 )
                 obj_int_vars.extend(variables)
                 obj_int_coeffs.extend(coeffs)
 
     # Penalized transitions
-    for previous_shift, next_shift, cost in penalized_transitions:
+    for previous_shift_ref, next_shift_ref, cost in penalized_transitions:
+        previous_shift = shift_index(shifts, previous_shift_ref)
+        next_shift = shift_index(shifts, next_shift_ref)
         for e in range(num_employees):
             for d in range(num_days - 1):
                 transition = [
@@ -460,17 +503,27 @@ def solve_shift_scheduling(config: dict[str, Any], params: str, output_proto: st
                     obj_bool_coeffs.append(cost)
 
     # Cover constraints
-    for s in range(1, num_shifts):
+    cover_shift_indices = shift_indices_with_attribute(shifts, attributes, "covers_demand")
+    if len(excess_cover_penalties) != len(cover_shift_indices):
+        raise ValueError(
+            "excess_cover_penalties must match the number of demand-covering shifts"
+        )
+    for row in weekly_cover_demands:
+        if len(row) != len(cover_shift_indices):
+            raise ValueError(
+                "weekly_cover_demands rows must match the number of demand-covering shifts"
+            )
+
+    for cover_index, s in enumerate(cover_shift_indices):
         for w in range(num_weeks):
             for d in range(7):
                 works = [work[e, s, w * 7 + d] for e in range(num_employees)]
-                # Ignore Off shift.
-                min_demand = weekly_cover_demands[d][s - 1]
+                min_demand = weekly_cover_demands[d][cover_index]
                 worked = model.new_int_var(min_demand, num_employees, "")
                 model.add(worked == sum(works))
-                over_penalty = excess_cover_penalties[s - 1]
+                over_penalty = excess_cover_penalties[cover_index]
                 if over_penalty > 0:
-                    name = f"excess_demand(shift={s}, week={w}, day={d})"
+                    name = f"excess_demand(shift={shifts[s]}, week={w}, day={d})"
                     excess = model.new_int_var(0, num_employees - min_demand, name)
                     model.add(excess == worked - min_demand)
                     obj_int_vars.append(excess)

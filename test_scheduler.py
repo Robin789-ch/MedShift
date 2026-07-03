@@ -65,17 +65,48 @@ class WorkBalancingConstraintTest(unittest.TestCase):
         config = {
             "num_employees": 2,
             "num_weeks": 1,
-            "shifts": ["O", "M", "A", "N"],
+            "shifts": ["O", "D", "N", "F", "R"],
+            "shift_attributes": {
+                "O": {
+                    "counts_as_work": False,
+                    "covers_demand": False,
+                    "counts_as_weekly_off": True,
+                    "is_night": False,
+                },
+                "D": {
+                    "counts_as_work": True,
+                    "covers_demand": True,
+                    "counts_as_weekly_off": False,
+                    "is_night": False,
+                },
+                "N": {
+                    "counts_as_work": True,
+                    "covers_demand": True,
+                    "counts_as_weekly_off": False,
+                    "is_night": True,
+                },
+                "F": {
+                    "counts_as_work": True,
+                    "covers_demand": False,
+                    "counts_as_weekly_off": False,
+                    "is_night": False,
+                },
+                "R": {
+                    "counts_as_work": False,
+                    "covers_demand": False,
+                    "counts_as_weekly_off": False,
+                    "is_night": False,
+                },
+            },
             "employee_names": ["Ada", "Ben"],
-            "fixed_assignments": [],
+            "fixed_assignments": [[0, "F", 0], [1, "R", 0]],
             "requests": [],
             "shift_constraints": [],
             "weekly_sum_constraints": [],
             "penalized_transitions": [],
-            "weekly_cover_demands": [[1, 0, 0] for _ in range(7)],
-            "excess_cover_penalties": [0, 0, 0],
+            "weekly_cover_demands": [[0, 0]] + [[1, 0] for _ in range(6)],
+            "excess_cover_penalties": [0, 0],
             "work_balance": {
-                "off_shift": "O",
                 "night_shift": "N",
                 "night_cost": 1,
                 "work_cost": 1,
@@ -89,6 +120,8 @@ class WorkBalancingConstraintTest(unittest.TestCase):
         self.assertEqual(result["employee_names"], ["Ada", "Ben"])
         self.assertEqual(result["num_workers"], 2)
         self.assertEqual(result["num_days"], 7)
+        self.assertEqual(result["plan"][0][0], "F")
+        self.assertEqual(result["plan"][1][0], "R")
 
 
 if __name__ == "__main__":
