@@ -47,6 +47,21 @@ Run the optimizer from the command line:
 When the frontend server is listening on port `8000`, the CLI run also posts the
 latest solved schedule to the UI.
 
+Run the experimental single-stage optimizer in parallel:
+
+```sh
+./ortools/bin/python -B frontend_server_single_stage.py --port 8001
+./ortools/bin/python -B scheduler_single_stage.py --config=config.toml --params=max_time_in_seconds:10.0
+```
+
+The copied single-stage CLI posts to `http://127.0.0.1:8001/schedule` by
+default, leaving the baseline two-stage server on port `8000`.
+
+The single-stage UI also exposes optional weekly hour caps. Leave
+`max_hours_per_week` blank for no cap, or set it with department
+`duration_hours` values to limit each employee's assigned department hours per
+week.
+
 ## Frontend Workflow
 
 The UI has two main steps:

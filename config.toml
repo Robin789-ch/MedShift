@@ -76,6 +76,7 @@ name = "Day"
 shift = "D"
 symbol = "D"
 color = "#ffe08a"
+duration_hours = 8
 requirements = [5, 5, 4, 5, 4, 3, 4]
 
 [[departments]]
@@ -84,6 +85,7 @@ name = "Night"
 shift = "N"
 symbol = "N"
 color = "#5964d8"
+duration_hours = 12
 requirements = [1, 1, 2, 1, 2, 3, 1]
 
 [shift_attributes.O]
