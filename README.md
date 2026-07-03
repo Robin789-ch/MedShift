@@ -1,92 +1,100 @@
 # SchedulePlanner
 
-SchedulePlanner is a small OR-Tools CP-SAT shift scheduler with a lightweight
-development UI. It solves broad day types and department assignments in one
-CP-SAT model.
+SchedulePlanner is a small hospital shift-planning app. It helps build a staff
+schedule with broad shift types, concrete department assignments, fixed days,
+requests, weekly hour limits, and overtime recovery.
 
-The frontend is intentionally simple: a single Python stdlib web server that
-lets you create employees, departments, fixed assignments, requests, run the
-optimizer, inspect the result table, and open the captured solver logs.
+It runs locally in your browser. There is no database and no account system.
 
-## Repository Layout
+## What It Can Do
 
-- `scheduler.py`: optimizer, TOML parsing, frontend sender, and CLI entrypoint.
-- `frontend_server.py`: tiny configuration/result/log web server.
-- `config.toml`: default model configuration.
-- `test_scheduler.py`: unit and integration tests for solver behavior.
-- `ortools/`: local Python environment used by this repo.
+- Plan multiple weeks at once.
+- Configure employees and pending overtime hours.
+- Configure departments, weekday staffing needs, shift length, symbol, and color.
+- Mark fixed assignments, desired assignments, and not-desired assignments.
+- Optimize a schedule with Google OR-Tools.
+- View the result table and solver logs in the browser.
 
-## Quick Start
+The default example uses these broad shifts:
 
-Run the tests:
+- `O`: off
+- `D`: day
+- `N`: night
+- `F`: formation/training
+- `R`: overtime recovery
+- `H`: holiday
+
+## Requirements
+
+- Python 3.11 or newer
+- `pip`
+
+Python 3.13 is recommended because that is the version used for the current
+local test environment.
+
+## Setup
+
+Create a virtual environment and install the pinned dependencies:
 
 ```sh
-./ortools/bin/python -B -m unittest test_scheduler.py
+python3.13 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
 ```
 
-Start the development UI:
+If `python3.13` is not installed, use another Python 3.11+ executable:
 
 ```sh
-./ortools/bin/python -B frontend_server.py --port 8000
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
 ```
 
-Open:
+## Run The App
+
+Start the local web app:
+
+```sh
+.venv/bin/python -B frontend_server.py --port 8000
+```
+
+Open this URL:
 
 ```text
 http://127.0.0.1:8000
 ```
 
-Run the optimizer from the command line:
+In the app:
+
+1. Set employees, overtime balances, number of weeks, and departments.
+2. Click `Next`.
+3. Paint fixed assignments or requests onto the grid.
+4. Click `Optimize`.
+
+## Run From The Command Line
+
+You can also solve the example config without opening the browser:
 
 ```sh
-./ortools/bin/python -B scheduler.py --config=config.toml --params=max_time_in_seconds:10.0
+.venv/bin/python -B scheduler.py --config=config.toml --params=max_time_in_seconds:10.0
 ```
 
-When the frontend server is listening on port `8000`, the CLI run also posts the
-latest solved schedule to the UI.
+If the browser app is already running on port `8000`, the command also sends
+the latest solved schedule to the app.
 
-## Frontend Workflow
+## Customize The Example
 
-The UI has two main steps:
+The default schedule lives in `config.toml`.
 
-1. Define employees, number of weeks, and departments.
-2. Paint fixed assignments, desired requests, and not-desired requests onto the
-   schedule grid, then optimize.
+Most users should start by changing:
 
-Cell picker choices include broad shifts and departments:
+- `num_employees`
+- `num_weeks`
+- `employee_overtime_hours`
+- `fixed_assignments`
+- `requests`
+- `departments`
+- `max_hours_per_week`
 
-- Broad shifts: `O`, `D`, `N`, `F`, `R`, `H`.
-- Departments: configured by ID, displayed by their symbol and color.
-
-The result table keeps the broad `plan` intact and overlays department symbols
-and colors for department-assigned `D` and `N` cells. Solver output is captured
-in the optional logs drawer.
-
-## HTTP Endpoints
-
-- `GET /`: serves the UI.
-- `GET /defaults`: returns the default config built from `config.toml`.
-- `POST /optimize`: accepts a config JSON payload, runs the optimizer,
-  and returns `{ ok, schedule, log }` style state.
-- `GET /schedule`: returns the latest stored schedule, or `204` if none exists.
-- `POST /schedule`: stores an already-solved schedule payload.
-- `GET /logs`: returns the latest captured optimizer log.
-
-## Model Overview
-
-The broad shift symbols currently are:
-
-- `O`: off day; counts toward weekly off-day constraints.
-- `D`: day work; covers department demand.
-- `N`: night work; covers department demand and counts as night work.
-- `F`: formation day; counts as work but covers no demand and may only appear
-  as a fixed assignment.
-- `R`: overtime recovery; off by work semantics, but does not count toward the
-  weekly off-day minimum.
-- `H`: holiday; counts as work, covers no demand, and may only appear as a fixed
-  assignment or desired request.
-
-Departments are configured in `config.toml` with:
+Department demand is configured per weekday:
 
 ```toml
 [[departments]]
@@ -99,13 +107,11 @@ duration_hours = 8
 requirements = [5, 5, 4, 5, 4, 3, 4]
 ```
 
-Department demand is the source of truth. The solver links each department
-assignment to its broad shift, so exact department cover, broad shift sequence
-rules, hour caps, requests, and department continuity are optimized together.
+The `requirements` list starts on Monday and must contain up to seven numbers.
 
-## Constraint Inputs
+## Requests And Fixed Assignments
 
-Broad fixed assignments:
+Fixed broad shift assignment:
 
 ```toml
 fixed_assignments = [
@@ -114,7 +120,7 @@ fixed_assignments = [
 ]
 ```
 
-Broad requests:
+Broad shift request:
 
 ```toml
 requests = [
@@ -123,10 +129,9 @@ requests = [
 ]
 ```
 
-Negative weights are desired assignments. Positive weights are not-desired
-assignments.
+Negative weights mean desired. Positive weights mean not desired.
 
-Department constraints use stable department IDs:
+Department assignments use department IDs:
 
 ```toml
 department_fixed_assignments = [
@@ -139,51 +144,16 @@ department_requests = [
 ]
 ```
 
-Department requests are handled through the linked department variables.
-Positive request weights penalize unwanted assignments; negative weights reward
-desired assignments.
+## Test
 
-Optional weekly hour caps use:
-
-```toml
-max_hours_per_week = 50
-```
-
-Department work contributes each department's `duration_hours`. Non-department
-shift durations can be configured under `shift_attributes`; by default,
-formation (`F`) and recovery (`R`) count as 8 hours, while holidays (`H`) count
-as 0.
-
-Pending overtime balances can be entered per employee:
-
-```toml
-employee_overtime_hours = [0, 8, 16]
-```
-
-The solver uses those balances to prefer recovery days for employees with the
-largest remaining overtime, while penalizing recovery assigned beyond an
-employee's pending balance. Coefficients live under `[overtime_balance]`.
-
-## Solver Logs
-
-The solver prints OR-Tools objective improvements, selected penalties/gains, and
-solver stats. The CLI no longer prints a schedule table; the UI result table is
-the schedule view.
-
-## Validation
-
-Useful checks before handing off changes:
+Run the test suite:
 
 ```sh
-./ortools/bin/python -B -m py_compile scheduler.py frontend_server.py test_scheduler.py
-./ortools/bin/python -B -m unittest test_scheduler.py
-./ortools/bin/python -B -c "from frontend_server import PAGE; import re, sys; sys.stdout.write(re.search(r'<script>(.*)</script>', PAGE, re.S).group(1))" | node --check
-git diff --check
+.venv/bin/python -B -m unittest discover
 ```
 
-For an HTTP smoke test with the server running:
+## Status
 
-```sh
-curl -s http://127.0.0.1:8000/defaults \
-  | curl -s -X POST -H "Content-Type: application/json" --data-binary @- http://127.0.0.1:8000/optimize
-```
+This project is ready for local testing, but it is still a small prototype. The
+optimizer can report no feasible solution if the staffing requirements,
+fixed assignments, and hour limits conflict.
