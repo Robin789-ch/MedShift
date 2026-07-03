@@ -21,7 +21,6 @@ def base_config() -> dict:
         "shift_constraints": [],
         "weekly_sum_constraints": [],
         "penalized_transitions": [],
-        "excess_cover_penalties": [0, 0],
         "department_fixed_assignments": [],
         "department_requests": [],
         "department_switch_penalty": 1,
@@ -58,6 +57,19 @@ class DepartmentSchedulingTest(unittest.TestCase):
         self.assertEqual(result["plan"][1][0], "D")
         self.assertEqual(result["department_plan"][1][0], "day")
         self.assertIn("Schedule optimization", log)
+
+    def test_department_request_uses_normalized_department_id(self) -> None:
+        config = base_config()
+        config["departments"][0]["id"] = "day-1"
+        config["departments"][0]["name"] = "Day 1"
+        config["departments"][0]["requirements"] = [1, 0, 0, 0, 0, 0, 0]
+        config["department_requests"] = [[1, "day-1", 0, -100]]
+
+        result, _log = self.solve_quietly(config)
+
+        self.assertIsNotNone(result)
+        assert result is not None
+        self.assertEqual(result["department_plan"][1][0], "day_1")
 
     def test_fixed_department_assignment_sets_broad_shift(self) -> None:
         config = base_config()

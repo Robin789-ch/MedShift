@@ -206,7 +206,6 @@ def shift_attributes(config: dict[str, Any], shifts: list[str]) -> dict[str, dic
             "name": shift,
             "counts_as_work": shift not in {"O", "R"},
             "covers_demand": shift not in {"O", "F", "R", "H"},
-            "counts_as_weekly_off": shift == "O",
             "is_night": shift == "N",
             "requires_fixed_assignment": shift == "F",
             "requires_assignment_request": shift == "H",
@@ -625,7 +624,6 @@ def solve_shift_scheduling(config: dict[str, Any], params: str, output_proto: st
     weekly_sum_constraints = config.get("weekly_sum_constraints", [])
     penalized_transitions = config.get("penalized_transitions", [])
     weekly_cover_demands = derive_weekly_cover_demands(config, departments)
-    excess_cover_penalties = config.get("excess_cover_penalties", [])
     work_balance = config.get("work_balance", {})
     department_fixed_assignments = config.get("department_fixed_assignments", [])
     department_requests = config.get("department_requests", [])
@@ -721,6 +719,7 @@ def solve_shift_scheduling(config: dict[str, Any], params: str, output_proto: st
         model.add(work[e, s, d] == 1)
 
     for employee, department_id, day in department_fixed_assignments:
+        department_id = _slug(department_id)
         if department_id not in departments_by_id:
             raise ValueError(f"Unknown department id: {department_id}")
         if not (0 <= int(employee) < num_employees and 0 <= int(day) < num_days):
@@ -734,6 +733,7 @@ def solve_shift_scheduling(config: dict[str, Any], params: str, output_proto: st
         obj_bool_coeffs.append(w)
 
     for employee, department_id, day, weight in department_requests:
+        department_id = _slug(department_id)
         if department_id not in departments_by_id:
             raise ValueError(f"Unknown department id: {department_id}")
         if not (0 <= int(employee) < num_employees and 0 <= int(day) < num_days):
@@ -912,10 +912,6 @@ def solve_shift_scheduling(config: dict[str, Any], params: str, output_proto: st
 
     # Cover constraints
     cover_shift_indices = shift_indices_with_attribute(shifts, attributes, "covers_demand")
-    if excess_cover_penalties and len(excess_cover_penalties) != len(cover_shift_indices):
-        raise ValueError(
-            "excess_cover_penalties must match the number of demand-covering shifts"
-        )
     for row in weekly_cover_demands:
         if len(row) != len(cover_shift_indices):
             raise ValueError(

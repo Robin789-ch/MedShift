@@ -64,9 +64,6 @@ weekly_cover_demands = [
   [4, 1],
 ]
 
-# Penalty for exceeding the cover constraint per demand-covering shift type.
-excess_cover_penalties = [10, 20]
-
 department_fixed_assignments = []
 department_requests = []
 department_switch_penalty = 1
@@ -93,7 +90,6 @@ requirements = [1, 1, 2, 1, 2, 3, 1]
 name = "Off"
 counts_as_work = false
 covers_demand = false
-counts_as_weekly_off = true
 is_night = false
 requires_fixed_assignment = false
 requires_assignment_request = false
@@ -102,7 +98,6 @@ requires_assignment_request = false
 name = "Day"
 counts_as_work = true
 covers_demand = true
-counts_as_weekly_off = false
 is_night = false
 requires_fixed_assignment = false
 requires_assignment_request = false
@@ -111,7 +106,6 @@ requires_assignment_request = false
 name = "Night"
 counts_as_work = true
 covers_demand = true
-counts_as_weekly_off = false
 is_night = true
 requires_fixed_assignment = false
 requires_assignment_request = false
@@ -120,7 +114,6 @@ requires_assignment_request = false
 name = "Formation"
 counts_as_work = true
 covers_demand = false
-counts_as_weekly_off = false
 is_night = false
 requires_fixed_assignment = true
 requires_assignment_request = false
@@ -130,7 +123,6 @@ duration_hours = 8
 name = "Recovery"
 counts_as_work = false
 covers_demand = false
-counts_as_weekly_off = false
 is_night = false
 requires_fixed_assignment = false
 requires_assignment_request = false
@@ -140,7 +132,6 @@ duration_hours = 8
 name = "Holiday"
 counts_as_work = true
 covers_demand = false
-counts_as_weekly_off = false
 is_night = false
 requires_fixed_assignment = false
 requires_assignment_request = true

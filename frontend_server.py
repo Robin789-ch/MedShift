@@ -651,8 +651,8 @@ PAGE = """<!doctype html>
       return String(value || "")
         .trim()
         .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-+|-+$/g, "") || "department";
+        .replace(/[^a-z0-9]+/g, "_")
+        .replace(/^_+|_+$/g, "") || "department";
     }
 
     function normalizeDepartment(department, index) {
@@ -680,7 +680,7 @@ PAGE = """<!doctype html>
         let id = baseId;
         let suffix = 2;
         while (used.has(id)) {
-          id = `${baseId}-${suffix}`;
+          id = `${baseId}_${suffix}`;
           suffix += 1;
         }
         used.add(id);
@@ -1167,7 +1167,7 @@ PAGE = """<!doctype html>
     document.getElementById("add-department").addEventListener("click", () => {
       const shift = coverShifts[0] || "D";
       departments.push(normalizeDepartment({
-        id: `${slug(shift)}-${departments.length + 1}`,
+        id: `${slug(shift)}_${departments.length + 1}`,
         name: `${shiftNames[shift] || shift} ${departments.length + 1}`,
         shift,
         symbol: shift,
