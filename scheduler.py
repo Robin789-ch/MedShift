@@ -15,6 +15,9 @@
 
 """Creates a shift scheduling problem and solves it."""
 
+import json
+import urllib.request
+
 from absl import app
 from absl import flags
 
@@ -26,6 +29,27 @@ _OUTPUT_PROTO = flags.DEFINE_string(
 _PARAMS = flags.DEFINE_string(
     "params", "max_time_in_seconds:10.0", "Sat solver parameters."
 )
+
+FRONTEND_URL = "http://127.0.0.1:8000/schedule"
+
+
+def send_to_frontend(result, url: str = FRONTEND_URL) -> None:
+    """Sends a solved schedule to the development visualization server."""
+    if result is None:
+        return
+
+    data = json.dumps(result).encode("utf-8")
+    request = urllib.request.Request(
+        url,
+        data=data,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=2):
+            pass
+    except Exception as exc:  # The visualizer is optional during solver runs.
+        print(f"Could not send schedule to frontend at {url}: {exc}")
 
 
 def negated_bounded_span(
@@ -221,7 +245,6 @@ def solve_shift_scheduling(params: str, output_proto: str):
         (4, 2, 0),
         (5, 2, 0),
         (6, 2, 3),
-        (7, 3, 0),
         (0, 1, 1),
         (1, 1, 1),
         (2, 2, 1),
@@ -229,7 +252,6 @@ def solve_shift_scheduling(params: str, output_proto: str):
         (4, 2, 1),
         (5, 0, 1),
         (6, 0, 1),
-        (7, 3, 1),
     ]
 
     # Request: (employee, shift, day, weight)
@@ -415,18 +437,23 @@ def solve_shift_scheduling(params: str, output_proto: str):
     status = solver.solve(model, solution_printer)
 
     # Print solution.
+    result = None
     if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
         print()
         header = "          "
         for w in range(num_weeks):
             header += "M T W T F S S "
         print(header)
+        plan = []
         for e in range(num_employees):
             schedule = ""
+            employee_plan = []
             for d in range(num_days):
                 for s in range(num_shifts):
                     if solver.boolean_value(work[e, s, d]):
+                        employee_plan.append(shifts[s])
                         schedule += shifts[s] + " "
+            plan.append(employee_plan)
             print(f"worker {e}: {schedule}")
         print()
         print("Penalties:")
@@ -445,12 +472,21 @@ def solve_shift_scheduling(params: str, output_proto: str):
                     f" penalty={obj_int_coeffs[i]}"
                 )
 
+        result = {
+            "shifts": shifts,
+            "num_workers": num_employees,
+            "num_days": num_days,
+            "plan": plan,
+        }
+
     print()
     print(solver.response_stats())
+    return result
 
 
 def main(_):
-    solve_shift_scheduling(_PARAMS.value, _OUTPUT_PROTO.value)
+    result = solve_shift_scheduling(_PARAMS.value, _OUTPUT_PROTO.value)
+    send_to_frontend(result)
 
 
 if __name__ == "__main__":
