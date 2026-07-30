@@ -1,0 +1,15 @@
+[project]
+name = "medshift-agent"
+version = "0.2.0"
+requires-python = ">=3.14"
+dependencies = [
+    "fastapi>=0.128,<1",
+    "httpx>=0.28,<1",
+    "medshift-contracts",
+    "pydantic-ai-slim[openrouter]>=1.39,<2",
+    "uvicorn>=0.40,<1",
+]
+
+[build-system]
+requires = ["uv-build>=0.11.21,<0.12"]
+build-backend = "uv_build"

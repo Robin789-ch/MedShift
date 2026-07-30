@@ -1,17 +1,25 @@
-[project]
-name = "medshift"
-version = "0.1.0"
-description = "Add your description here"
-readme = "README.md"
-requires-python = ">=3.14"
-dependencies = [
-    "absl-py==2.4.0",
-    "immutabledict==4.3.1",
-    "numpy==2.5.0",
-    "ortools==9.15.6755",
-    "pandas==3.0.4",
-    "protobuf==6.33.6",
-    "python-dateutil==2.9.0.post0",
-    "six==1.17.0",
-    "typing-extensions==4.15.0",
+[tool.uv.workspace]
+members = [
+    "packages/contracts",
+    "services/agent",
+    "services/optimizer",
 ]
+
+[tool.uv.sources]
+medshift-contracts = { workspace = true }
+
+[dependency-groups]
+dev = [
+    "mypy>=1.19,<2",
+    "pytest>=9,<10",
+]
+
+[tool.pytest.ini_options]
+testpaths = [
+    "services/agent/tests",
+    "services/optimizer/tests",
+]
+
+[tool.mypy]
+python_version = "3.14"
+strict = true

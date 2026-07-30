@@ -1,0 +1,54 @@
+services:
+  optimizer:
+    build:
+      context: .
+      dockerfile: services/optimizer/Dockerfile
+    environment:
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      SOLVER_MAX_TIME_SECONDS: ${SOLVER_MAX_TIME_SECONDS:-60}
+    ports:
+      - "8001:8001"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - >-
+          import urllib.request;
+          urllib.request.urlopen("http://localhost:8001/health", timeout=2)
+      interval: 2s
+      timeout: 3s
+      retries: 30
+      start_period: 3s
+
+  agent:
+    build:
+      context: .
+      dockerfile: services/agent/Dockerfile
+    depends_on:
+      optimizer:
+        condition: service_healthy
+    environment:
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      MODEL_TIMEOUT_SECONDS: ${MODEL_TIMEOUT_SECONDS:-60}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-}
+      OPTIMIZER_TIMEOUT_SECONDS: ${OPTIMIZER_TIMEOUT_SECONDS:-70}
+      OPTIMIZER_URL: http://optimizer:8001
+      WORKSPACE_PATH: /data/workspace.json
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/data
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - >-
+          import urllib.request;
+          urllib.request.urlopen("http://localhost:8000/api/health", timeout=2)
+      interval: 2s
+      timeout: 3s
+      retries: 30
+      start_period: 3s
