@@ -1,8 +1,11 @@
+import json
+
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from httpx import ASGITransport
 
 from medshift_agent.app import create_app
+from medshift_contracts import Scenario
 
 
 def valid_environ(**overrides: str) -> dict[str, str]:
@@ -99,3 +102,67 @@ def test_health_reports_optimizer_failure() -> None:
             "optimizer": "error",
         },
     }
+
+
+def test_request_validation_uses_the_stable_error_envelope() -> None:
+    agent = create_app(environ=valid_environ())
+
+    @agent.post("/api/test-contract", response_model=Scenario)
+    def accept_scenario(scenario: Scenario) -> Scenario:
+        return scenario
+
+    response = TestClient(agent).post(
+        "/api/test-contract",
+        json={"planning_weeks": 0},
+    )
+
+    assert response.status_code == 422
+    assert response.json() == {
+        "error": {
+            "code": "request_invalid",
+            "message": "The request does not match the expected contract.",
+            "details": {},
+        }
+    }
+
+
+def test_openapi_publishes_all_contracts_with_stable_validation_errors() -> None:
+    agent = create_app(environ=valid_environ())
+
+    @agent.post("/api/test-contract", response_model=Scenario)
+    def accept_scenario(scenario: Scenario) -> Scenario:
+        return scenario
+
+    openapi = agent.openapi()
+    schemas = openapi["components"]["schemas"]
+
+    assert {
+        "ErrorEnvelope",
+        "Objective",
+        "Policy",
+        "Proposal",
+        "ProposalChange",
+        "Scenario",
+        "SolveRequest",
+        "SolveResult",
+        "StateResponse",
+        "Workspace",
+        "WorkspaceChange",
+    } <= schemas.keys()
+    assert "HTTPValidationError" not in schemas
+    assert "ValidationError" not in schemas
+    assert openapi["paths"]["/api/test-contract"]["post"]["responses"]["422"] == {
+        "description": "Request Invalid",
+        "content": {
+            "application/json": {
+                "schema": {"$ref": "#/components/schemas/ErrorEnvelope"}
+            }
+        },
+    }
+    assert json.dumps(
+        create_app(environ=valid_environ()).openapi(),
+        sort_keys=True,
+    ) == json.dumps(
+        create_app(environ=valid_environ()).openapi(),
+        sort_keys=True,
+    )

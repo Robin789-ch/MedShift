@@ -15,6 +15,371 @@ export type webhooks = Record<string, never>;
 
 export interface components {
   schemas: {
+    /** AddObjective */
+    AddObjective: {
+      /**
+       * Kind
+       * @constant
+       */
+      kind: "add_objective";
+      /** Objective */
+      objective: components["schemas"]["ConsecutiveShiftPreference"] | components["schemas"]["WeeklyShiftCountPreference"] | components["schemas"]["ShiftTransitionPreference"] | components["schemas"]["EmployeePreferenceObjective"] | components["schemas"]["WorkloadBalanceObjective"] | components["schemas"]["NightShiftBalanceObjective"] | components["schemas"]["RemainingOvertimeObjective"] | components["schemas"]["MaximumRemainingOvertimeObjective"] | components["schemas"]["ExcessRecoveryObjective"] | components["schemas"]["ConsecutiveDepartmentContinuityObjective"];
+    };
+    /** AddPolicy */
+    AddPolicy: {
+      /**
+       * Kind
+       * @constant
+       */
+      kind: "add_policy";
+      /** Policy */
+      policy: components["schemas"]["ConsecutiveShiftLimit"] | components["schemas"]["WeeklyShiftCountLimit"] | components["schemas"]["ForbiddenShiftTransition"];
+    };
+    /** ApplicationError */
+    ApplicationError: {
+      /**
+       * Code
+       * @enum {string}
+       */
+      code: "request_invalid" | "workspace_not_initialized" | "workspace_corrupt" | "workspace_version_unsupported" | "revision_conflict" | "proposal_pending" | "proposal_not_found" | "decision_invalid" | "agent_unavailable" | "optimizer_unavailable" | "model_invalid" | "solve_failed";
+      /** Details */
+      details: {
+        [key: string]: components["schemas"]["JsonValue"];
+      };
+      /** Message */
+      message: string;
+    };
+    /** AssignmentTarget */
+    AssignmentTarget: components["schemas"]["ShiftTypeTarget"] | components["schemas"]["DepartmentTarget"];
+    /** ConsecutiveDepartmentContinuityObjective */
+    ConsecutiveDepartmentContinuityObjective: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /**
+       * Kind
+       * @constant
+       */
+      kind: "consecutive_department_continuity_objective";
+      /** Weight */
+      weight: number;
+    };
+    /** ConsecutiveShiftLimit */
+    ConsecutiveShiftLimit: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /**
+       * Kind
+       * @constant
+       */
+      kind: "consecutive_shift_limit";
+      /** Maximum Run Length */
+      maximum_run_length: number | null;
+      /** Minimum Run Length */
+      minimum_run_length: number | null;
+      shift_type: components["schemas"]["ShiftType"];
+    };
+    /** ConsecutiveShiftPreference */
+    ConsecutiveShiftPreference: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /**
+       * Kind
+       * @constant
+       */
+      kind: "consecutive_shift_preference";
+      preferred_maximum: components["schemas"]["WeightedBound"] | null;
+      preferred_minimum: components["schemas"]["WeightedBound"] | null;
+      shift_type: components["schemas"]["ShiftType"];
+    };
+    /** DayAssignment */
+    DayAssignment: {
+      /** Day Index */
+      day_index: number;
+      /** Department Id */
+      department_id: string | null;
+      shift_type: components["schemas"]["ShiftType"];
+    };
+    /** DayShiftTypeDefinition */
+    DayShiftTypeDefinition: {
+      /**
+       * Assignment Hours
+       * @constant
+       */
+      assignment_hours: null;
+      /**
+       * Code
+       * @constant
+       */
+      code: "D";
+      /**
+       * Counts Toward Workload Balance
+       * @constant
+       */
+      counts_toward_workload_balance: true;
+      /**
+       * Covers Demand
+       * @constant
+       */
+      covers_demand: true;
+      /**
+       * Eligibility
+       * @constant
+       */
+      eligibility: "automatic";
+      /**
+       * Is Night
+       * @constant
+       */
+      is_night: false;
+      /**
+       * Name
+       * @constant
+       */
+      name: "Day";
+      /**
+       * Recovers Overtime
+       * @constant
+       */
+      recovers_overtime: false;
+      /**
+       * Shift Type
+       * @constant
+       */
+      shift_type: "day";
+    };
+    /** DecisionDetail */
+    DecisionDetail: {
+      /** Label */
+      label: string;
+      /** Value */
+      value: string;
+    };
+    /** DecisionView */
+    DecisionView: {
+      /** Details */
+      details: components["schemas"]["DecisionDetail"][];
+      /** Summary */
+      summary: string;
+      /** Title */
+      title: string;
+    };
+    /** Department */
+    Department: {
+      /** Color */
+      color: string;
+      /**
+       * Department Id
+       * Format: uuid
+       */
+      department_id: string;
+      /** Display Name */
+      display_name: string;
+      /** Duration Hours */
+      duration_hours: number;
+      /**
+       * Shift Type
+       * @enum {string}
+       */
+      shift_type: "day" | "night";
+      /** Staffing Demand */
+      staffing_demand: [number, number, number, number, number, number, number];
+      /** Symbol */
+      symbol: string;
+    };
+    /** DepartmentTarget */
+    DepartmentTarget: {
+      /**
+       * Department Id
+       * Format: uuid
+       */
+      department_id: string;
+      /**
+       * Kind
+       * @constant
+       */
+      kind: "department";
+    };
+    /** Employee */
+    Employee: {
+      /** Display Name */
+      display_name: string;
+      /**
+       * Employee Id
+       * Format: uuid
+       */
+      employee_id: string;
+      /** Overtime Hours */
+      overtime_hours: number;
+      /** Weekly Hours Ceiling */
+      weekly_hours_ceiling: number;
+    };
+    /** EmployeePreference */
+    EmployeePreference: {
+      /** Day Index */
+      day_index: number;
+      /**
+       * Direction
+       * @enum {string}
+       */
+      direction: "desired" | "avoided";
+      /**
+       * Employee Id
+       * Format: uuid
+       */
+      employee_id: string;
+      /**
+       * Kind
+       * @constant
+       */
+      kind: "employee_preference";
+      /** Target */
+      target: components["schemas"]["ShiftTypeTarget"] | components["schemas"]["DepartmentTarget"];
+    };
+    /** EmployeePreferenceObjective */
+    EmployeePreferenceObjective: {
+      /** Avoided Weight */
+      avoided_weight: number;
+      /** Desired Weight */
+      desired_weight: number;
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /**
+       * Kind
+       * @constant
+       */
+      kind: "employee_preference_objective";
+    };
+    /** EmployeeSchedule */
+    EmployeeSchedule: {
+      /** Days */
+      days: components["schemas"]["DayAssignment"][];
+      /**
+       * Employee Id
+       * Format: uuid
+       */
+      employee_id: string;
+    };
+    /** ErrorEnvelope */
+    ErrorEnvelope: {
+      error: components["schemas"]["ApplicationError"];
+    };
+    /** ExcessRecoveryObjective */
+    ExcessRecoveryObjective: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /**
+       * Kind
+       * @constant
+       */
+      kind: "excess_recovery_objective";
+      /** Weight */
+      weight: number;
+    };
+    /** FeasibleSolveResult */
+    FeasibleSolveResult: {
+      diagnostics: components["schemas"]["SolveDiagnostics"];
+      schedule: components["schemas"]["Schedule"];
+      /**
+       * Status
+       * @constant
+       */
+      status: "feasible";
+    };
+    /** FixedAssignment */
+    FixedAssignment: {
+      /** Day Index */
+      day_index: number;
+      /**
+       * Employee Id
+       * Format: uuid
+       */
+      employee_id: string;
+      /**
+       * Kind
+       * @constant
+       */
+      kind: "fixed_assignment";
+      /** Target */
+      target: components["schemas"]["ShiftTypeTarget"] | components["schemas"]["DepartmentTarget"];
+    };
+    /** ForbiddenShiftTransition */
+    ForbiddenShiftTransition: {
+      from_shift_type: components["schemas"]["ShiftType"];
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /**
+       * Kind
+       * @constant
+       */
+      kind: "forbidden_shift_transition";
+      to_shift_type: components["schemas"]["ShiftType"];
+    };
+    /** FormationShiftTypeDefinition */
+    FormationShiftTypeDefinition: {
+      /**
+       * Assignment Hours
+       * @constant
+       */
+      assignment_hours: 8;
+      /**
+       * Code
+       * @constant
+       */
+      code: "F";
+      /**
+       * Counts Toward Workload Balance
+       * @constant
+       */
+      counts_toward_workload_balance: true;
+      /**
+       * Covers Demand
+       * @constant
+       */
+      covers_demand: false;
+      /**
+       * Eligibility
+       * @constant
+       */
+      eligibility: "fixed_assignment_only";
+      /**
+       * Is Night
+       * @constant
+       */
+      is_night: false;
+      /**
+       * Name
+       * @constant
+       */
+      name: "Formation";
+      /**
+       * Recovers Overtime
+       * @constant
+       */
+      recovers_overtime: false;
+      /**
+       * Shift Type
+       * @constant
+       */
+      shift_type: "formation";
+    };
     /** HealthResponse */
     HealthResponse: {
       /** Checks */
@@ -32,6 +397,627 @@ export interface components {
        */
       status: "ok" | "error";
     };
+    /** HolidayShiftTypeDefinition */
+    HolidayShiftTypeDefinition: {
+      /**
+       * Assignment Hours
+       * @constant
+       */
+      assignment_hours: 0;
+      /**
+       * Code
+       * @constant
+       */
+      code: "H";
+      /**
+       * Counts Toward Workload Balance
+       * @constant
+       */
+      counts_toward_workload_balance: true;
+      /**
+       * Covers Demand
+       * @constant
+       */
+      covers_demand: false;
+      /**
+       * Eligibility
+       * @constant
+       */
+      eligibility: "fixed_assignment_or_desired_preference";
+      /**
+       * Is Night
+       * @constant
+       */
+      is_night: false;
+      /**
+       * Name
+       * @constant
+       */
+      name: "Holiday";
+      /**
+       * Recovers Overtime
+       * @constant
+       */
+      recovers_overtime: false;
+      /**
+       * Shift Type
+       * @constant
+       */
+      shift_type: "holiday";
+    };
+    /** InfeasibleSolveResult */
+    InfeasibleSolveResult: {
+      diagnostics: components["schemas"]["SolveDiagnostics"];
+      /**
+       * Status
+       * @constant
+       */
+      status: "infeasible";
+    };
+    /** InitializedState */
+    InitializedState: {
+      /**
+       * Initialized
+       * @constant
+       */
+      initialized: true;
+      /** Objectives */
+      objectives: components["schemas"]["DecisionView"][];
+      /** Policies */
+      policies: components["schemas"]["DecisionView"][];
+      /** Revision */
+      revision: number;
+      scenario: components["schemas"]["Scenario"];
+      /** Shift Types */
+      shift_types: [components["schemas"]["OffShiftTypeDefinition"], components["schemas"]["DayShiftTypeDefinition"], components["schemas"]["NightShiftTypeDefinition"], components["schemas"]["FormationShiftTypeDefinition"], components["schemas"]["RecoveryShiftTypeDefinition"], components["schemas"]["HolidayShiftTypeDefinition"]];
+    };
+    JsonValue: unknown;
+    /** MaximumRemainingOvertimeObjective */
+    MaximumRemainingOvertimeObjective: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /**
+       * Kind
+       * @constant
+       */
+      kind: "maximum_remaining_overtime_objective";
+      /** Weight */
+      weight: number;
+    };
+    /** NightShiftBalanceObjective */
+    NightShiftBalanceObjective: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /**
+       * Kind
+       * @constant
+       */
+      kind: "night_shift_balance_objective";
+      /** Weight */
+      weight: number;
+    };
+    /** NightShiftTypeDefinition */
+    NightShiftTypeDefinition: {
+      /**
+       * Assignment Hours
+       * @constant
+       */
+      assignment_hours: null;
+      /**
+       * Code
+       * @constant
+       */
+      code: "N";
+      /**
+       * Counts Toward Workload Balance
+       * @constant
+       */
+      counts_toward_workload_balance: true;
+      /**
+       * Covers Demand
+       * @constant
+       */
+      covers_demand: true;
+      /**
+       * Eligibility
+       * @constant
+       */
+      eligibility: "automatic";
+      /**
+       * Is Night
+       * @constant
+       */
+      is_night: true;
+      /**
+       * Name
+       * @constant
+       */
+      name: "Night";
+      /**
+       * Recovers Overtime
+       * @constant
+       */
+      recovers_overtime: false;
+      /**
+       * Shift Type
+       * @constant
+       */
+      shift_type: "night";
+    };
+    /** Objective */
+    Objective: components["schemas"]["ConsecutiveShiftPreference"] | components["schemas"]["WeeklyShiftCountPreference"] | components["schemas"]["ShiftTransitionPreference"] | components["schemas"]["EmployeePreferenceObjective"] | components["schemas"]["WorkloadBalanceObjective"] | components["schemas"]["NightShiftBalanceObjective"] | components["schemas"]["RemainingOvertimeObjective"] | components["schemas"]["MaximumRemainingOvertimeObjective"] | components["schemas"]["ExcessRecoveryObjective"] | components["schemas"]["ConsecutiveDepartmentContinuityObjective"];
+    /** ObjectiveContribution */
+    ObjectiveContribution: {
+      /** Contribution */
+      contribution: number;
+      /**
+       * Objective Id
+       * Format: uuid
+       */
+      objective_id: string;
+    };
+    /** OffShiftTypeDefinition */
+    OffShiftTypeDefinition: {
+      /**
+       * Assignment Hours
+       * @constant
+       */
+      assignment_hours: 0;
+      /**
+       * Code
+       * @constant
+       */
+      code: "O";
+      /**
+       * Counts Toward Workload Balance
+       * @constant
+       */
+      counts_toward_workload_balance: false;
+      /**
+       * Covers Demand
+       * @constant
+       */
+      covers_demand: false;
+      /**
+       * Eligibility
+       * @constant
+       */
+      eligibility: "automatic";
+      /**
+       * Is Night
+       * @constant
+       */
+      is_night: false;
+      /**
+       * Name
+       * @constant
+       */
+      name: "Off";
+      /**
+       * Recovers Overtime
+       * @constant
+       */
+      recovers_overtime: false;
+      /**
+       * Shift Type
+       * @constant
+       */
+      shift_type: "off";
+    };
+    /** OptimalSolveResult */
+    OptimalSolveResult: {
+      diagnostics: components["schemas"]["SolveDiagnostics"];
+      schedule: components["schemas"]["Schedule"];
+      /**
+       * Status
+       * @constant
+       */
+      status: "optimal";
+    };
+    /** PlanningEntry */
+    PlanningEntry: components["schemas"]["FixedAssignment"] | components["schemas"]["EmployeePreference"];
+    /** Policy */
+    Policy: components["schemas"]["ConsecutiveShiftLimit"] | components["schemas"]["WeeklyShiftCountLimit"] | components["schemas"]["ForbiddenShiftTransition"];
+    /** Proposal */
+    Proposal: {
+      /** Base Revision */
+      base_revision: number;
+      /** Changes */
+      changes: (components["schemas"]["ProposalAddition"] | components["schemas"]["ProposalUpdate"] | components["schemas"]["ProposalRemoval"])[];
+      /**
+       * Proposal Id
+       * Format: uuid
+       */
+      proposal_id: string;
+    };
+    /** ProposalAddition */
+    ProposalAddition: {
+      after: components["schemas"]["DecisionView"];
+      /**
+       * Decision Type
+       * @enum {string}
+       */
+      decision_type: "policy" | "objective";
+      /**
+       * Kind
+       * @constant
+       */
+      kind: "addition";
+    };
+    /** ProposalChange */
+    ProposalChange: components["schemas"]["ProposalAddition"] | components["schemas"]["ProposalUpdate"] | components["schemas"]["ProposalRemoval"];
+    /** ProposalRemoval */
+    ProposalRemoval: {
+      before: components["schemas"]["DecisionView"];
+      /**
+       * Decision Type
+       * @enum {string}
+       */
+      decision_type: "policy" | "objective";
+      /**
+       * Kind
+       * @constant
+       */
+      kind: "removal";
+    };
+    /** ProposalUpdate */
+    ProposalUpdate: {
+      after: components["schemas"]["DecisionView"];
+      before: components["schemas"]["DecisionView"];
+      /**
+       * Decision Type
+       * @enum {string}
+       */
+      decision_type: "policy" | "objective";
+      /**
+       * Kind
+       * @constant
+       */
+      kind: "update";
+    };
+    /** RecoveryShiftTypeDefinition */
+    RecoveryShiftTypeDefinition: {
+      /**
+       * Assignment Hours
+       * @constant
+       */
+      assignment_hours: 8;
+      /**
+       * Code
+       * @constant
+       */
+      code: "R";
+      /**
+       * Counts Toward Workload Balance
+       * @constant
+       */
+      counts_toward_workload_balance: false;
+      /**
+       * Covers Demand
+       * @constant
+       */
+      covers_demand: false;
+      /**
+       * Eligibility
+       * @constant
+       */
+      eligibility: "automatic";
+      /**
+       * Is Night
+       * @constant
+       */
+      is_night: false;
+      /**
+       * Name
+       * @constant
+       */
+      name: "Recovery";
+      /**
+       * Recovers Overtime
+       * @constant
+       */
+      recovers_overtime: true;
+      /**
+       * Shift Type
+       * @constant
+       */
+      shift_type: "recovery";
+    };
+    /** RemainingOvertimeObjective */
+    RemainingOvertimeObjective: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /**
+       * Kind
+       * @constant
+       */
+      kind: "remaining_overtime_objective";
+      /** Weight */
+      weight: number;
+    };
+    /** RemoveObjective */
+    RemoveObjective: {
+      /**
+       * Kind
+       * @constant
+       */
+      kind: "remove_objective";
+      /**
+       * Objective Id
+       * Format: uuid
+       */
+      objective_id: string;
+    };
+    /** RemovePolicy */
+    RemovePolicy: {
+      /**
+       * Kind
+       * @constant
+       */
+      kind: "remove_policy";
+      /**
+       * Policy Id
+       * Format: uuid
+       */
+      policy_id: string;
+    };
+    /** Scenario */
+    Scenario: {
+      /** Departments */
+      departments: components["schemas"]["Department"][];
+      /** Employees */
+      employees: components["schemas"]["Employee"][];
+      /** Planning Entries */
+      planning_entries: (components["schemas"]["FixedAssignment"] | components["schemas"]["EmployeePreference"])[];
+      /** Planning Weeks */
+      planning_weeks: number;
+    };
+    /** Schedule */
+    Schedule: {
+      /** Employees */
+      employees: components["schemas"]["EmployeeSchedule"][];
+    };
+    /** ShiftTransitionPreference */
+    ShiftTransitionPreference: {
+      /**
+       * Direction
+       * @enum {string}
+       */
+      direction: "encourage" | "discourage";
+      from_shift_type: components["schemas"]["ShiftType"];
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /**
+       * Kind
+       * @constant
+       */
+      kind: "shift_transition_preference";
+      to_shift_type: components["schemas"]["ShiftType"];
+      /** Weight */
+      weight: number;
+    };
+    /**
+     * ShiftType
+     * @enum {string}
+     */
+    ShiftType: "off" | "day" | "night" | "formation" | "recovery" | "holiday";
+    /** ShiftTypeCatalogue */
+    ShiftTypeCatalogue: [components["schemas"]["OffShiftTypeDefinition"], components["schemas"]["DayShiftTypeDefinition"], components["schemas"]["NightShiftTypeDefinition"], components["schemas"]["FormationShiftTypeDefinition"], components["schemas"]["RecoveryShiftTypeDefinition"], components["schemas"]["HolidayShiftTypeDefinition"]];
+    /** ShiftTypeDefinition */
+    ShiftTypeDefinition: components["schemas"]["OffShiftTypeDefinition"] | components["schemas"]["DayShiftTypeDefinition"] | components["schemas"]["NightShiftTypeDefinition"] | components["schemas"]["FormationShiftTypeDefinition"] | components["schemas"]["RecoveryShiftTypeDefinition"] | components["schemas"]["HolidayShiftTypeDefinition"];
+    /** ShiftTypeTarget */
+    ShiftTypeTarget: {
+      /**
+       * Kind
+       * @constant
+       */
+      kind: "shift_type";
+      shift_type: components["schemas"]["ShiftType"];
+    };
+    /** SolveDepartment */
+    SolveDepartment: {
+      /**
+       * Department Id
+       * Format: uuid
+       */
+      department_id: string;
+      /** Duration Hours */
+      duration_hours: number;
+      /**
+       * Shift Type
+       * @enum {string}
+       */
+      shift_type: "day" | "night";
+      /** Staffing Demand */
+      staffing_demand: [number, number, number, number, number, number, number];
+    };
+    /** SolveDiagnostics */
+    SolveDiagnostics: {
+      /** Best Objective Bound */
+      best_objective_bound: number | null;
+      /** Branches */
+      branches: number;
+      /** Conflicts */
+      conflicts: number;
+      /** Contributions */
+      contributions: components["schemas"]["ObjectiveContribution"][];
+      /** Objective Value */
+      objective_value: number | null;
+      /** Wall Time Seconds */
+      wall_time_seconds: number;
+    };
+    /** SolveEmployee */
+    SolveEmployee: {
+      /**
+       * Employee Id
+       * Format: uuid
+       */
+      employee_id: string;
+      /** Overtime Hours */
+      overtime_hours: number;
+      /** Weekly Hours Ceiling */
+      weekly_hours_ceiling: number;
+    };
+    /** SolveRequest */
+    SolveRequest: {
+      /** Departments */
+      departments: components["schemas"]["SolveDepartment"][];
+      /** Employees */
+      employees: components["schemas"]["SolveEmployee"][];
+      /** Objectives */
+      objectives: (components["schemas"]["ConsecutiveShiftPreference"] | components["schemas"]["WeeklyShiftCountPreference"] | components["schemas"]["ShiftTransitionPreference"] | components["schemas"]["EmployeePreferenceObjective"] | components["schemas"]["WorkloadBalanceObjective"] | components["schemas"]["NightShiftBalanceObjective"] | components["schemas"]["RemainingOvertimeObjective"] | components["schemas"]["MaximumRemainingOvertimeObjective"] | components["schemas"]["ExcessRecoveryObjective"] | components["schemas"]["ConsecutiveDepartmentContinuityObjective"])[];
+      /** Planning Entries */
+      planning_entries: (components["schemas"]["FixedAssignment"] | components["schemas"]["EmployeePreference"])[];
+      /** Planning Weeks */
+      planning_weeks: number;
+      /** Policies */
+      policies: (components["schemas"]["ConsecutiveShiftLimit"] | components["schemas"]["WeeklyShiftCountLimit"] | components["schemas"]["ForbiddenShiftTransition"])[];
+      /**
+       * Schema Version
+       * @constant
+       */
+      schema_version: 1;
+      /** Workspace Revision */
+      workspace_revision: number;
+    };
+    /** SolveResult */
+    SolveResult: components["schemas"]["OptimalSolveResult"] | components["schemas"]["FeasibleSolveResult"] | components["schemas"]["InfeasibleSolveResult"] | components["schemas"]["UnknownSolveResult"];
+    /** StateResponse */
+    StateResponse: components["schemas"]["UninitializedState"] | components["schemas"]["InitializedState"];
+    /** UninitializedState */
+    UninitializedState: {
+      /**
+       * Initialized
+       * @constant
+       */
+      initialized: false;
+      /** Shift Types */
+      shift_types: [components["schemas"]["OffShiftTypeDefinition"], components["schemas"]["DayShiftTypeDefinition"], components["schemas"]["NightShiftTypeDefinition"], components["schemas"]["FormationShiftTypeDefinition"], components["schemas"]["RecoveryShiftTypeDefinition"], components["schemas"]["HolidayShiftTypeDefinition"]];
+    };
+    /** UnknownSolveResult */
+    UnknownSolveResult: {
+      diagnostics: components["schemas"]["SolveDiagnostics"];
+      /**
+       * Status
+       * @constant
+       */
+      status: "unknown";
+    };
+    /** UpdateObjective */
+    UpdateObjective: {
+      /**
+       * Kind
+       * @constant
+       */
+      kind: "update_objective";
+      /** Objective */
+      objective: components["schemas"]["ConsecutiveShiftPreference"] | components["schemas"]["WeeklyShiftCountPreference"] | components["schemas"]["ShiftTransitionPreference"] | components["schemas"]["EmployeePreferenceObjective"] | components["schemas"]["WorkloadBalanceObjective"] | components["schemas"]["NightShiftBalanceObjective"] | components["schemas"]["RemainingOvertimeObjective"] | components["schemas"]["MaximumRemainingOvertimeObjective"] | components["schemas"]["ExcessRecoveryObjective"] | components["schemas"]["ConsecutiveDepartmentContinuityObjective"];
+      /**
+       * Objective Id
+       * Format: uuid
+       */
+      objective_id: string;
+    };
+    /** UpdatePolicy */
+    UpdatePolicy: {
+      /**
+       * Kind
+       * @constant
+       */
+      kind: "update_policy";
+      /** Policy */
+      policy: components["schemas"]["ConsecutiveShiftLimit"] | components["schemas"]["WeeklyShiftCountLimit"] | components["schemas"]["ForbiddenShiftTransition"];
+      /**
+       * Policy Id
+       * Format: uuid
+       */
+      policy_id: string;
+    };
+    /** WeeklyShiftCountLimit */
+    WeeklyShiftCountLimit: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /**
+       * Kind
+       * @constant
+       */
+      kind: "weekly_shift_count_limit";
+      /** Maximum Count */
+      maximum_count: number | null;
+      /** Minimum Count */
+      minimum_count: number | null;
+      shift_type: components["schemas"]["ShiftType"];
+    };
+    /** WeeklyShiftCountPreference */
+    WeeklyShiftCountPreference: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /**
+       * Kind
+       * @constant
+       */
+      kind: "weekly_shift_count_preference";
+      preferred_maximum: components["schemas"]["WeightedBound"] | null;
+      preferred_minimum: components["schemas"]["WeightedBound"] | null;
+      shift_type: components["schemas"]["ShiftType"];
+    };
+    /** WeightedBound */
+    WeightedBound: {
+      /** Value */
+      value: number;
+      /** Weight */
+      weight: number;
+    };
+    /** WorkloadBalanceObjective */
+    WorkloadBalanceObjective: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /**
+       * Kind
+       * @constant
+       */
+      kind: "workload_balance_objective";
+      /** Weight */
+      weight: number;
+    };
+    /** Workspace */
+    Workspace: {
+      /** Objectives */
+      objectives: (components["schemas"]["ConsecutiveShiftPreference"] | components["schemas"]["WeeklyShiftCountPreference"] | components["schemas"]["ShiftTransitionPreference"] | components["schemas"]["EmployeePreferenceObjective"] | components["schemas"]["WorkloadBalanceObjective"] | components["schemas"]["NightShiftBalanceObjective"] | components["schemas"]["RemainingOvertimeObjective"] | components["schemas"]["MaximumRemainingOvertimeObjective"] | components["schemas"]["ExcessRecoveryObjective"] | components["schemas"]["ConsecutiveDepartmentContinuityObjective"])[];
+      /** Policies */
+      policies: (components["schemas"]["ConsecutiveShiftLimit"] | components["schemas"]["WeeklyShiftCountLimit"] | components["schemas"]["ForbiddenShiftTransition"])[];
+      /** Revision */
+      revision: number;
+      scenario: components["schemas"]["Scenario"];
+      /**
+       * Schema Version
+       * @constant
+       */
+      schema_version: 1;
+    };
+    /** WorkspaceChange */
+    WorkspaceChange: components["schemas"]["AddPolicy"] | components["schemas"]["UpdatePolicy"] | components["schemas"]["RemovePolicy"] | components["schemas"]["AddObjective"] | components["schemas"]["UpdateObjective"] | components["schemas"]["RemoveObjective"];
   };
   responses: never;
   parameters: never;

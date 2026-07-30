@@ -1,6 +1,894 @@
 {
   "components": {
     "schemas": {
+      "AddObjective": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "add_objective",
+            "title": "Kind",
+            "type": "string"
+          },
+          "objective": {
+            "discriminator": {
+              "mapping": {
+                "consecutive_department_continuity_objective": "#/components/schemas/ConsecutiveDepartmentContinuityObjective",
+                "consecutive_shift_preference": "#/components/schemas/ConsecutiveShiftPreference",
+                "employee_preference_objective": "#/components/schemas/EmployeePreferenceObjective",
+                "excess_recovery_objective": "#/components/schemas/ExcessRecoveryObjective",
+                "maximum_remaining_overtime_objective": "#/components/schemas/MaximumRemainingOvertimeObjective",
+                "night_shift_balance_objective": "#/components/schemas/NightShiftBalanceObjective",
+                "remaining_overtime_objective": "#/components/schemas/RemainingOvertimeObjective",
+                "shift_transition_preference": "#/components/schemas/ShiftTransitionPreference",
+                "weekly_shift_count_preference": "#/components/schemas/WeeklyShiftCountPreference",
+                "workload_balance_objective": "#/components/schemas/WorkloadBalanceObjective"
+              },
+              "propertyName": "kind"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ConsecutiveShiftPreference"
+              },
+              {
+                "$ref": "#/components/schemas/WeeklyShiftCountPreference"
+              },
+              {
+                "$ref": "#/components/schemas/ShiftTransitionPreference"
+              },
+              {
+                "$ref": "#/components/schemas/EmployeePreferenceObjective"
+              },
+              {
+                "$ref": "#/components/schemas/WorkloadBalanceObjective"
+              },
+              {
+                "$ref": "#/components/schemas/NightShiftBalanceObjective"
+              },
+              {
+                "$ref": "#/components/schemas/RemainingOvertimeObjective"
+              },
+              {
+                "$ref": "#/components/schemas/MaximumRemainingOvertimeObjective"
+              },
+              {
+                "$ref": "#/components/schemas/ExcessRecoveryObjective"
+              },
+              {
+                "$ref": "#/components/schemas/ConsecutiveDepartmentContinuityObjective"
+              }
+            ],
+            "title": "Objective"
+          }
+        },
+        "required": [
+          "kind",
+          "objective"
+        ],
+        "title": "AddObjective",
+        "type": "object"
+      },
+      "AddPolicy": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "add_policy",
+            "title": "Kind",
+            "type": "string"
+          },
+          "policy": {
+            "discriminator": {
+              "mapping": {
+                "consecutive_shift_limit": "#/components/schemas/ConsecutiveShiftLimit",
+                "forbidden_shift_transition": "#/components/schemas/ForbiddenShiftTransition",
+                "weekly_shift_count_limit": "#/components/schemas/WeeklyShiftCountLimit"
+              },
+              "propertyName": "kind"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ConsecutiveShiftLimit"
+              },
+              {
+                "$ref": "#/components/schemas/WeeklyShiftCountLimit"
+              },
+              {
+                "$ref": "#/components/schemas/ForbiddenShiftTransition"
+              }
+            ],
+            "title": "Policy"
+          }
+        },
+        "required": [
+          "kind",
+          "policy"
+        ],
+        "title": "AddPolicy",
+        "type": "object"
+      },
+      "ApplicationError": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "enum": [
+              "request_invalid",
+              "workspace_not_initialized",
+              "workspace_corrupt",
+              "workspace_version_unsupported",
+              "revision_conflict",
+              "proposal_pending",
+              "proposal_not_found",
+              "decision_invalid",
+              "agent_unavailable",
+              "optimizer_unavailable",
+              "model_invalid",
+              "solve_failed"
+            ],
+            "title": "Code",
+            "type": "string"
+          },
+          "details": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "title": "Details",
+            "type": "object"
+          },
+          "message": {
+            "minLength": 1,
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "details"
+        ],
+        "title": "ApplicationError",
+        "type": "object"
+      },
+      "AssignmentTarget": {
+        "discriminator": {
+          "mapping": {
+            "department": "#/components/schemas/DepartmentTarget",
+            "shift_type": "#/components/schemas/ShiftTypeTarget"
+          },
+          "propertyName": "kind"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/ShiftTypeTarget"
+          },
+          {
+            "$ref": "#/components/schemas/DepartmentTarget"
+          }
+        ],
+        "title": "AssignmentTarget"
+      },
+      "ConsecutiveDepartmentContinuityObjective": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "const": "consecutive_department_continuity_objective",
+            "title": "Kind",
+            "type": "string"
+          },
+          "weight": {
+            "exclusiveMinimum": 0,
+            "title": "Weight",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "weight"
+        ],
+        "title": "ConsecutiveDepartmentContinuityObjective",
+        "type": "object"
+      },
+      "ConsecutiveShiftLimit": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "const": "consecutive_shift_limit",
+            "title": "Kind",
+            "type": "string"
+          },
+          "maximum_run_length": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maximum Run Length"
+          },
+          "minimum_run_length": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Minimum Run Length"
+          },
+          "shift_type": {
+            "$ref": "#/components/schemas/ShiftType"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "shift_type",
+          "minimum_run_length",
+          "maximum_run_length"
+        ],
+        "title": "ConsecutiveShiftLimit",
+        "type": "object"
+      },
+      "ConsecutiveShiftPreference": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "const": "consecutive_shift_preference",
+            "title": "Kind",
+            "type": "string"
+          },
+          "preferred_maximum": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WeightedBound"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "preferred_minimum": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WeightedBound"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "shift_type": {
+            "$ref": "#/components/schemas/ShiftType"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "shift_type",
+          "preferred_minimum",
+          "preferred_maximum"
+        ],
+        "title": "ConsecutiveShiftPreference",
+        "type": "object"
+      },
+      "DayAssignment": {
+        "additionalProperties": false,
+        "properties": {
+          "day_index": {
+            "minimum": 0,
+            "title": "Day Index",
+            "type": "integer"
+          },
+          "department_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          },
+          "shift_type": {
+            "$ref": "#/components/schemas/ShiftType"
+          }
+        },
+        "required": [
+          "day_index",
+          "shift_type",
+          "department_id"
+        ],
+        "title": "DayAssignment",
+        "type": "object"
+      },
+      "DayShiftTypeDefinition": {
+        "additionalProperties": false,
+        "properties": {
+          "assignment_hours": {
+            "const": null,
+            "title": "Assignment Hours",
+            "type": "null"
+          },
+          "code": {
+            "const": "D",
+            "title": "Code",
+            "type": "string"
+          },
+          "counts_toward_workload_balance": {
+            "const": true,
+            "title": "Counts Toward Workload Balance",
+            "type": "boolean"
+          },
+          "covers_demand": {
+            "const": true,
+            "title": "Covers Demand",
+            "type": "boolean"
+          },
+          "eligibility": {
+            "const": "automatic",
+            "title": "Eligibility",
+            "type": "string"
+          },
+          "is_night": {
+            "const": false,
+            "title": "Is Night",
+            "type": "boolean"
+          },
+          "name": {
+            "const": "Day",
+            "title": "Name",
+            "type": "string"
+          },
+          "recovers_overtime": {
+            "const": false,
+            "title": "Recovers Overtime",
+            "type": "boolean"
+          },
+          "shift_type": {
+            "const": "day",
+            "title": "Shift Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "shift_type",
+          "code",
+          "name",
+          "covers_demand",
+          "is_night",
+          "counts_toward_workload_balance",
+          "assignment_hours",
+          "recovers_overtime",
+          "eligibility"
+        ],
+        "title": "DayShiftTypeDefinition",
+        "type": "object"
+      },
+      "DecisionDetail": {
+        "additionalProperties": false,
+        "properties": {
+          "label": {
+            "minLength": 1,
+            "title": "Label",
+            "type": "string"
+          },
+          "value": {
+            "minLength": 1,
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "label",
+          "value"
+        ],
+        "title": "DecisionDetail",
+        "type": "object"
+      },
+      "DecisionView": {
+        "additionalProperties": false,
+        "properties": {
+          "details": {
+            "items": {
+              "$ref": "#/components/schemas/DecisionDetail"
+            },
+            "title": "Details",
+            "type": "array"
+          },
+          "summary": {
+            "minLength": 1,
+            "title": "Summary",
+            "type": "string"
+          },
+          "title": {
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "summary",
+          "details"
+        ],
+        "title": "DecisionView",
+        "type": "object"
+      },
+      "Department": {
+        "additionalProperties": false,
+        "properties": {
+          "color": {
+            "pattern": "^#[0-9A-Fa-f]{6}$",
+            "title": "Color",
+            "type": "string"
+          },
+          "department_id": {
+            "format": "uuid",
+            "title": "Department Id",
+            "type": "string"
+          },
+          "display_name": {
+            "minLength": 1,
+            "title": "Display Name",
+            "type": "string"
+          },
+          "duration_hours": {
+            "maximum": 24,
+            "minimum": 1,
+            "title": "Duration Hours",
+            "type": "integer"
+          },
+          "shift_type": {
+            "enum": [
+              "day",
+              "night"
+            ],
+            "title": "Shift Type",
+            "type": "string"
+          },
+          "staffing_demand": {
+            "maxItems": 7,
+            "minItems": 7,
+            "prefixItems": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "minimum": 0,
+                "type": "integer"
+              }
+            ],
+            "title": "Staffing Demand",
+            "type": "array"
+          },
+          "symbol": {
+            "maxLength": 3,
+            "minLength": 1,
+            "title": "Symbol",
+            "type": "string"
+          }
+        },
+        "required": [
+          "department_id",
+          "display_name",
+          "shift_type",
+          "symbol",
+          "color",
+          "duration_hours",
+          "staffing_demand"
+        ],
+        "title": "Department",
+        "type": "object"
+      },
+      "DepartmentTarget": {
+        "additionalProperties": false,
+        "properties": {
+          "department_id": {
+            "format": "uuid",
+            "title": "Department Id",
+            "type": "string"
+          },
+          "kind": {
+            "const": "department",
+            "title": "Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "department_id"
+        ],
+        "title": "DepartmentTarget",
+        "type": "object"
+      },
+      "Employee": {
+        "additionalProperties": false,
+        "properties": {
+          "display_name": {
+            "minLength": 1,
+            "title": "Display Name",
+            "type": "string"
+          },
+          "employee_id": {
+            "format": "uuid",
+            "title": "Employee Id",
+            "type": "string"
+          },
+          "overtime_hours": {
+            "maximum": 1000,
+            "minimum": 0,
+            "title": "Overtime Hours",
+            "type": "integer"
+          },
+          "weekly_hours_ceiling": {
+            "maximum": 168,
+            "minimum": 1,
+            "title": "Weekly Hours Ceiling",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "employee_id",
+          "display_name",
+          "overtime_hours",
+          "weekly_hours_ceiling"
+        ],
+        "title": "Employee",
+        "type": "object"
+      },
+      "EmployeePreference": {
+        "additionalProperties": false,
+        "properties": {
+          "day_index": {
+            "minimum": 0,
+            "title": "Day Index",
+            "type": "integer"
+          },
+          "direction": {
+            "enum": [
+              "desired",
+              "avoided"
+            ],
+            "title": "Direction",
+            "type": "string"
+          },
+          "employee_id": {
+            "format": "uuid",
+            "title": "Employee Id",
+            "type": "string"
+          },
+          "kind": {
+            "const": "employee_preference",
+            "title": "Kind",
+            "type": "string"
+          },
+          "target": {
+            "discriminator": {
+              "mapping": {
+                "department": "#/components/schemas/DepartmentTarget",
+                "shift_type": "#/components/schemas/ShiftTypeTarget"
+              },
+              "propertyName": "kind"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ShiftTypeTarget"
+              },
+              {
+                "$ref": "#/components/schemas/DepartmentTarget"
+              }
+            ],
+            "title": "Target"
+          }
+        },
+        "required": [
+          "kind",
+          "employee_id",
+          "day_index",
+          "target",
+          "direction"
+        ],
+        "title": "EmployeePreference",
+        "type": "object"
+      },
+      "EmployeePreferenceObjective": {
+        "additionalProperties": false,
+        "properties": {
+          "avoided_weight": {
+            "exclusiveMinimum": 0,
+            "title": "Avoided Weight",
+            "type": "integer"
+          },
+          "desired_weight": {
+            "exclusiveMinimum": 0,
+            "title": "Desired Weight",
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "const": "employee_preference_objective",
+            "title": "Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "desired_weight",
+          "avoided_weight"
+        ],
+        "title": "EmployeePreferenceObjective",
+        "type": "object"
+      },
+      "EmployeeSchedule": {
+        "additionalProperties": false,
+        "properties": {
+          "days": {
+            "items": {
+              "$ref": "#/components/schemas/DayAssignment"
+            },
+            "minItems": 1,
+            "title": "Days",
+            "type": "array"
+          },
+          "employee_id": {
+            "format": "uuid",
+            "title": "Employee Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "employee_id",
+          "days"
+        ],
+        "title": "EmployeeSchedule",
+        "type": "object"
+      },
+      "ErrorEnvelope": {
+        "additionalProperties": false,
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ApplicationError"
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "title": "ErrorEnvelope",
+        "type": "object"
+      },
+      "ExcessRecoveryObjective": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "const": "excess_recovery_objective",
+            "title": "Kind",
+            "type": "string"
+          },
+          "weight": {
+            "exclusiveMinimum": 0,
+            "title": "Weight",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "weight"
+        ],
+        "title": "ExcessRecoveryObjective",
+        "type": "object"
+      },
+      "FeasibleSolveResult": {
+        "additionalProperties": false,
+        "properties": {
+          "diagnostics": {
+            "$ref": "#/components/schemas/SolveDiagnostics"
+          },
+          "schedule": {
+            "$ref": "#/components/schemas/Schedule"
+          },
+          "status": {
+            "const": "feasible",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "schedule",
+          "diagnostics"
+        ],
+        "title": "FeasibleSolveResult",
+        "type": "object"
+      },
+      "FixedAssignment": {
+        "additionalProperties": false,
+        "properties": {
+          "day_index": {
+            "minimum": 0,
+            "title": "Day Index",
+            "type": "integer"
+          },
+          "employee_id": {
+            "format": "uuid",
+            "title": "Employee Id",
+            "type": "string"
+          },
+          "kind": {
+            "const": "fixed_assignment",
+            "title": "Kind",
+            "type": "string"
+          },
+          "target": {
+            "discriminator": {
+              "mapping": {
+                "department": "#/components/schemas/DepartmentTarget",
+                "shift_type": "#/components/schemas/ShiftTypeTarget"
+              },
+              "propertyName": "kind"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ShiftTypeTarget"
+              },
+              {
+                "$ref": "#/components/schemas/DepartmentTarget"
+              }
+            ],
+            "title": "Target"
+          }
+        },
+        "required": [
+          "kind",
+          "employee_id",
+          "day_index",
+          "target"
+        ],
+        "title": "FixedAssignment",
+        "type": "object"
+      },
+      "ForbiddenShiftTransition": {
+        "additionalProperties": false,
+        "properties": {
+          "from_shift_type": {
+            "$ref": "#/components/schemas/ShiftType"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "const": "forbidden_shift_transition",
+            "title": "Kind",
+            "type": "string"
+          },
+          "to_shift_type": {
+            "$ref": "#/components/schemas/ShiftType"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "from_shift_type",
+          "to_shift_type"
+        ],
+        "title": "ForbiddenShiftTransition",
+        "type": "object"
+      },
+      "FormationShiftTypeDefinition": {
+        "additionalProperties": false,
+        "properties": {
+          "assignment_hours": {
+            "const": 8,
+            "title": "Assignment Hours",
+            "type": "integer"
+          },
+          "code": {
+            "const": "F",
+            "title": "Code",
+            "type": "string"
+          },
+          "counts_toward_workload_balance": {
+            "const": true,
+            "title": "Counts Toward Workload Balance",
+            "type": "boolean"
+          },
+          "covers_demand": {
+            "const": false,
+            "title": "Covers Demand",
+            "type": "boolean"
+          },
+          "eligibility": {
+            "const": "fixed_assignment_only",
+            "title": "Eligibility",
+            "type": "string"
+          },
+          "is_night": {
+            "const": false,
+            "title": "Is Night",
+            "type": "boolean"
+          },
+          "name": {
+            "const": "Formation",
+            "title": "Name",
+            "type": "string"
+          },
+          "recovers_overtime": {
+            "const": false,
+            "title": "Recovers Overtime",
+            "type": "boolean"
+          },
+          "shift_type": {
+            "const": "formation",
+            "title": "Shift Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "shift_type",
+          "code",
+          "name",
+          "covers_demand",
+          "is_night",
+          "counts_toward_workload_balance",
+          "assignment_hours",
+          "recovers_overtime",
+          "eligibility"
+        ],
+        "title": "FormationShiftTypeDefinition",
+        "type": "object"
+      },
       "HealthResponse": {
         "properties": {
           "checks": {
@@ -39,6 +927,1778 @@
         ],
         "title": "HealthResponse",
         "type": "object"
+      },
+      "HolidayShiftTypeDefinition": {
+        "additionalProperties": false,
+        "properties": {
+          "assignment_hours": {
+            "const": 0,
+            "title": "Assignment Hours",
+            "type": "integer"
+          },
+          "code": {
+            "const": "H",
+            "title": "Code",
+            "type": "string"
+          },
+          "counts_toward_workload_balance": {
+            "const": true,
+            "title": "Counts Toward Workload Balance",
+            "type": "boolean"
+          },
+          "covers_demand": {
+            "const": false,
+            "title": "Covers Demand",
+            "type": "boolean"
+          },
+          "eligibility": {
+            "const": "fixed_assignment_or_desired_preference",
+            "title": "Eligibility",
+            "type": "string"
+          },
+          "is_night": {
+            "const": false,
+            "title": "Is Night",
+            "type": "boolean"
+          },
+          "name": {
+            "const": "Holiday",
+            "title": "Name",
+            "type": "string"
+          },
+          "recovers_overtime": {
+            "const": false,
+            "title": "Recovers Overtime",
+            "type": "boolean"
+          },
+          "shift_type": {
+            "const": "holiday",
+            "title": "Shift Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "shift_type",
+          "code",
+          "name",
+          "covers_demand",
+          "is_night",
+          "counts_toward_workload_balance",
+          "assignment_hours",
+          "recovers_overtime",
+          "eligibility"
+        ],
+        "title": "HolidayShiftTypeDefinition",
+        "type": "object"
+      },
+      "InfeasibleSolveResult": {
+        "additionalProperties": false,
+        "properties": {
+          "diagnostics": {
+            "$ref": "#/components/schemas/SolveDiagnostics"
+          },
+          "status": {
+            "const": "infeasible",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "diagnostics"
+        ],
+        "title": "InfeasibleSolveResult",
+        "type": "object"
+      },
+      "InitializedState": {
+        "additionalProperties": false,
+        "properties": {
+          "initialized": {
+            "const": true,
+            "title": "Initialized",
+            "type": "boolean"
+          },
+          "objectives": {
+            "items": {
+              "$ref": "#/components/schemas/DecisionView"
+            },
+            "title": "Objectives",
+            "type": "array"
+          },
+          "policies": {
+            "items": {
+              "$ref": "#/components/schemas/DecisionView"
+            },
+            "title": "Policies",
+            "type": "array"
+          },
+          "revision": {
+            "minimum": 1,
+            "title": "Revision",
+            "type": "integer"
+          },
+          "scenario": {
+            "$ref": "#/components/schemas/Scenario"
+          },
+          "shift_types": {
+            "maxItems": 6,
+            "minItems": 6,
+            "prefixItems": [
+              {
+                "$ref": "#/components/schemas/OffShiftTypeDefinition"
+              },
+              {
+                "$ref": "#/components/schemas/DayShiftTypeDefinition"
+              },
+              {
+                "$ref": "#/components/schemas/NightShiftTypeDefinition"
+              },
+              {
+                "$ref": "#/components/schemas/FormationShiftTypeDefinition"
+              },
+              {
+                "$ref": "#/components/schemas/RecoveryShiftTypeDefinition"
+              },
+              {
+                "$ref": "#/components/schemas/HolidayShiftTypeDefinition"
+              }
+            ],
+            "title": "Shift Types",
+            "type": "array"
+          }
+        },
+        "required": [
+          "initialized",
+          "revision",
+          "scenario",
+          "shift_types",
+          "policies",
+          "objectives"
+        ],
+        "title": "InitializedState",
+        "type": "object"
+      },
+      "JsonValue": {},
+      "MaximumRemainingOvertimeObjective": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "const": "maximum_remaining_overtime_objective",
+            "title": "Kind",
+            "type": "string"
+          },
+          "weight": {
+            "exclusiveMinimum": 0,
+            "title": "Weight",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "weight"
+        ],
+        "title": "MaximumRemainingOvertimeObjective",
+        "type": "object"
+      },
+      "NightShiftBalanceObjective": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "const": "night_shift_balance_objective",
+            "title": "Kind",
+            "type": "string"
+          },
+          "weight": {
+            "exclusiveMinimum": 0,
+            "title": "Weight",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "weight"
+        ],
+        "title": "NightShiftBalanceObjective",
+        "type": "object"
+      },
+      "NightShiftTypeDefinition": {
+        "additionalProperties": false,
+        "properties": {
+          "assignment_hours": {
+            "const": null,
+            "title": "Assignment Hours",
+            "type": "null"
+          },
+          "code": {
+            "const": "N",
+            "title": "Code",
+            "type": "string"
+          },
+          "counts_toward_workload_balance": {
+            "const": true,
+            "title": "Counts Toward Workload Balance",
+            "type": "boolean"
+          },
+          "covers_demand": {
+            "const": true,
+            "title": "Covers Demand",
+            "type": "boolean"
+          },
+          "eligibility": {
+            "const": "automatic",
+            "title": "Eligibility",
+            "type": "string"
+          },
+          "is_night": {
+            "const": true,
+            "title": "Is Night",
+            "type": "boolean"
+          },
+          "name": {
+            "const": "Night",
+            "title": "Name",
+            "type": "string"
+          },
+          "recovers_overtime": {
+            "const": false,
+            "title": "Recovers Overtime",
+            "type": "boolean"
+          },
+          "shift_type": {
+            "const": "night",
+            "title": "Shift Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "shift_type",
+          "code",
+          "name",
+          "covers_demand",
+          "is_night",
+          "counts_toward_workload_balance",
+          "assignment_hours",
+          "recovers_overtime",
+          "eligibility"
+        ],
+        "title": "NightShiftTypeDefinition",
+        "type": "object"
+      },
+      "Objective": {
+        "discriminator": {
+          "mapping": {
+            "consecutive_department_continuity_objective": "#/components/schemas/ConsecutiveDepartmentContinuityObjective",
+            "consecutive_shift_preference": "#/components/schemas/ConsecutiveShiftPreference",
+            "employee_preference_objective": "#/components/schemas/EmployeePreferenceObjective",
+            "excess_recovery_objective": "#/components/schemas/ExcessRecoveryObjective",
+            "maximum_remaining_overtime_objective": "#/components/schemas/MaximumRemainingOvertimeObjective",
+            "night_shift_balance_objective": "#/components/schemas/NightShiftBalanceObjective",
+            "remaining_overtime_objective": "#/components/schemas/RemainingOvertimeObjective",
+            "shift_transition_preference": "#/components/schemas/ShiftTransitionPreference",
+            "weekly_shift_count_preference": "#/components/schemas/WeeklyShiftCountPreference",
+            "workload_balance_objective": "#/components/schemas/WorkloadBalanceObjective"
+          },
+          "propertyName": "kind"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/ConsecutiveShiftPreference"
+          },
+          {
+            "$ref": "#/components/schemas/WeeklyShiftCountPreference"
+          },
+          {
+            "$ref": "#/components/schemas/ShiftTransitionPreference"
+          },
+          {
+            "$ref": "#/components/schemas/EmployeePreferenceObjective"
+          },
+          {
+            "$ref": "#/components/schemas/WorkloadBalanceObjective"
+          },
+          {
+            "$ref": "#/components/schemas/NightShiftBalanceObjective"
+          },
+          {
+            "$ref": "#/components/schemas/RemainingOvertimeObjective"
+          },
+          {
+            "$ref": "#/components/schemas/MaximumRemainingOvertimeObjective"
+          },
+          {
+            "$ref": "#/components/schemas/ExcessRecoveryObjective"
+          },
+          {
+            "$ref": "#/components/schemas/ConsecutiveDepartmentContinuityObjective"
+          }
+        ],
+        "title": "Objective"
+      },
+      "ObjectiveContribution": {
+        "additionalProperties": false,
+        "properties": {
+          "contribution": {
+            "title": "Contribution",
+            "type": "integer"
+          },
+          "objective_id": {
+            "format": "uuid",
+            "title": "Objective Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "objective_id",
+          "contribution"
+        ],
+        "title": "ObjectiveContribution",
+        "type": "object"
+      },
+      "OffShiftTypeDefinition": {
+        "additionalProperties": false,
+        "properties": {
+          "assignment_hours": {
+            "const": 0,
+            "title": "Assignment Hours",
+            "type": "integer"
+          },
+          "code": {
+            "const": "O",
+            "title": "Code",
+            "type": "string"
+          },
+          "counts_toward_workload_balance": {
+            "const": false,
+            "title": "Counts Toward Workload Balance",
+            "type": "boolean"
+          },
+          "covers_demand": {
+            "const": false,
+            "title": "Covers Demand",
+            "type": "boolean"
+          },
+          "eligibility": {
+            "const": "automatic",
+            "title": "Eligibility",
+            "type": "string"
+          },
+          "is_night": {
+            "const": false,
+            "title": "Is Night",
+            "type": "boolean"
+          },
+          "name": {
+            "const": "Off",
+            "title": "Name",
+            "type": "string"
+          },
+          "recovers_overtime": {
+            "const": false,
+            "title": "Recovers Overtime",
+            "type": "boolean"
+          },
+          "shift_type": {
+            "const": "off",
+            "title": "Shift Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "shift_type",
+          "code",
+          "name",
+          "covers_demand",
+          "is_night",
+          "counts_toward_workload_balance",
+          "assignment_hours",
+          "recovers_overtime",
+          "eligibility"
+        ],
+        "title": "OffShiftTypeDefinition",
+        "type": "object"
+      },
+      "OptimalSolveResult": {
+        "additionalProperties": false,
+        "properties": {
+          "diagnostics": {
+            "$ref": "#/components/schemas/SolveDiagnostics"
+          },
+          "schedule": {
+            "$ref": "#/components/schemas/Schedule"
+          },
+          "status": {
+            "const": "optimal",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "schedule",
+          "diagnostics"
+        ],
+        "title": "OptimalSolveResult",
+        "type": "object"
+      },
+      "PlanningEntry": {
+        "discriminator": {
+          "mapping": {
+            "employee_preference": "#/components/schemas/EmployeePreference",
+            "fixed_assignment": "#/components/schemas/FixedAssignment"
+          },
+          "propertyName": "kind"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/FixedAssignment"
+          },
+          {
+            "$ref": "#/components/schemas/EmployeePreference"
+          }
+        ],
+        "title": "PlanningEntry"
+      },
+      "Policy": {
+        "discriminator": {
+          "mapping": {
+            "consecutive_shift_limit": "#/components/schemas/ConsecutiveShiftLimit",
+            "forbidden_shift_transition": "#/components/schemas/ForbiddenShiftTransition",
+            "weekly_shift_count_limit": "#/components/schemas/WeeklyShiftCountLimit"
+          },
+          "propertyName": "kind"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/ConsecutiveShiftLimit"
+          },
+          {
+            "$ref": "#/components/schemas/WeeklyShiftCountLimit"
+          },
+          {
+            "$ref": "#/components/schemas/ForbiddenShiftTransition"
+          }
+        ],
+        "title": "Policy"
+      },
+      "Proposal": {
+        "additionalProperties": false,
+        "properties": {
+          "base_revision": {
+            "minimum": 1,
+            "title": "Base Revision",
+            "type": "integer"
+          },
+          "changes": {
+            "items": {
+              "discriminator": {
+                "mapping": {
+                  "addition": "#/components/schemas/ProposalAddition",
+                  "removal": "#/components/schemas/ProposalRemoval",
+                  "update": "#/components/schemas/ProposalUpdate"
+                },
+                "propertyName": "kind"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/ProposalAddition"
+                },
+                {
+                  "$ref": "#/components/schemas/ProposalUpdate"
+                },
+                {
+                  "$ref": "#/components/schemas/ProposalRemoval"
+                }
+              ]
+            },
+            "minItems": 1,
+            "title": "Changes",
+            "type": "array"
+          },
+          "proposal_id": {
+            "format": "uuid",
+            "title": "Proposal Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "proposal_id",
+          "base_revision",
+          "changes"
+        ],
+        "title": "Proposal",
+        "type": "object"
+      },
+      "ProposalAddition": {
+        "additionalProperties": false,
+        "properties": {
+          "after": {
+            "$ref": "#/components/schemas/DecisionView"
+          },
+          "decision_type": {
+            "enum": [
+              "policy",
+              "objective"
+            ],
+            "title": "Decision Type",
+            "type": "string"
+          },
+          "kind": {
+            "const": "addition",
+            "title": "Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "decision_type",
+          "after"
+        ],
+        "title": "ProposalAddition",
+        "type": "object"
+      },
+      "ProposalChange": {
+        "discriminator": {
+          "mapping": {
+            "addition": "#/components/schemas/ProposalAddition",
+            "removal": "#/components/schemas/ProposalRemoval",
+            "update": "#/components/schemas/ProposalUpdate"
+          },
+          "propertyName": "kind"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/ProposalAddition"
+          },
+          {
+            "$ref": "#/components/schemas/ProposalUpdate"
+          },
+          {
+            "$ref": "#/components/schemas/ProposalRemoval"
+          }
+        ],
+        "title": "ProposalChange"
+      },
+      "ProposalRemoval": {
+        "additionalProperties": false,
+        "properties": {
+          "before": {
+            "$ref": "#/components/schemas/DecisionView"
+          },
+          "decision_type": {
+            "enum": [
+              "policy",
+              "objective"
+            ],
+            "title": "Decision Type",
+            "type": "string"
+          },
+          "kind": {
+            "const": "removal",
+            "title": "Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "decision_type",
+          "before"
+        ],
+        "title": "ProposalRemoval",
+        "type": "object"
+      },
+      "ProposalUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "after": {
+            "$ref": "#/components/schemas/DecisionView"
+          },
+          "before": {
+            "$ref": "#/components/schemas/DecisionView"
+          },
+          "decision_type": {
+            "enum": [
+              "policy",
+              "objective"
+            ],
+            "title": "Decision Type",
+            "type": "string"
+          },
+          "kind": {
+            "const": "update",
+            "title": "Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "decision_type",
+          "before",
+          "after"
+        ],
+        "title": "ProposalUpdate",
+        "type": "object"
+      },
+      "RecoveryShiftTypeDefinition": {
+        "additionalProperties": false,
+        "properties": {
+          "assignment_hours": {
+            "const": 8,
+            "title": "Assignment Hours",
+            "type": "integer"
+          },
+          "code": {
+            "const": "R",
+            "title": "Code",
+            "type": "string"
+          },
+          "counts_toward_workload_balance": {
+            "const": false,
+            "title": "Counts Toward Workload Balance",
+            "type": "boolean"
+          },
+          "covers_demand": {
+            "const": false,
+            "title": "Covers Demand",
+            "type": "boolean"
+          },
+          "eligibility": {
+            "const": "automatic",
+            "title": "Eligibility",
+            "type": "string"
+          },
+          "is_night": {
+            "const": false,
+            "title": "Is Night",
+            "type": "boolean"
+          },
+          "name": {
+            "const": "Recovery",
+            "title": "Name",
+            "type": "string"
+          },
+          "recovers_overtime": {
+            "const": true,
+            "title": "Recovers Overtime",
+            "type": "boolean"
+          },
+          "shift_type": {
+            "const": "recovery",
+            "title": "Shift Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "shift_type",
+          "code",
+          "name",
+          "covers_demand",
+          "is_night",
+          "counts_toward_workload_balance",
+          "assignment_hours",
+          "recovers_overtime",
+          "eligibility"
+        ],
+        "title": "RecoveryShiftTypeDefinition",
+        "type": "object"
+      },
+      "RemainingOvertimeObjective": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "const": "remaining_overtime_objective",
+            "title": "Kind",
+            "type": "string"
+          },
+          "weight": {
+            "exclusiveMinimum": 0,
+            "title": "Weight",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "weight"
+        ],
+        "title": "RemainingOvertimeObjective",
+        "type": "object"
+      },
+      "RemoveObjective": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "remove_objective",
+            "title": "Kind",
+            "type": "string"
+          },
+          "objective_id": {
+            "format": "uuid",
+            "title": "Objective Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "objective_id"
+        ],
+        "title": "RemoveObjective",
+        "type": "object"
+      },
+      "RemovePolicy": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "remove_policy",
+            "title": "Kind",
+            "type": "string"
+          },
+          "policy_id": {
+            "format": "uuid",
+            "title": "Policy Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "policy_id"
+        ],
+        "title": "RemovePolicy",
+        "type": "object"
+      },
+      "Scenario": {
+        "additionalProperties": false,
+        "properties": {
+          "departments": {
+            "items": {
+              "$ref": "#/components/schemas/Department"
+            },
+            "title": "Departments",
+            "type": "array"
+          },
+          "employees": {
+            "items": {
+              "$ref": "#/components/schemas/Employee"
+            },
+            "minItems": 1,
+            "title": "Employees",
+            "type": "array"
+          },
+          "planning_entries": {
+            "items": {
+              "discriminator": {
+                "mapping": {
+                  "employee_preference": "#/components/schemas/EmployeePreference",
+                  "fixed_assignment": "#/components/schemas/FixedAssignment"
+                },
+                "propertyName": "kind"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/FixedAssignment"
+                },
+                {
+                  "$ref": "#/components/schemas/EmployeePreference"
+                }
+              ]
+            },
+            "title": "Planning Entries",
+            "type": "array"
+          },
+          "planning_weeks": {
+            "maximum": 12,
+            "minimum": 1,
+            "title": "Planning Weeks",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "planning_weeks",
+          "employees",
+          "departments",
+          "planning_entries"
+        ],
+        "title": "Scenario",
+        "type": "object"
+      },
+      "Schedule": {
+        "additionalProperties": false,
+        "properties": {
+          "employees": {
+            "items": {
+              "$ref": "#/components/schemas/EmployeeSchedule"
+            },
+            "minItems": 1,
+            "title": "Employees",
+            "type": "array"
+          }
+        },
+        "required": [
+          "employees"
+        ],
+        "title": "Schedule",
+        "type": "object"
+      },
+      "ShiftTransitionPreference": {
+        "additionalProperties": false,
+        "properties": {
+          "direction": {
+            "enum": [
+              "encourage",
+              "discourage"
+            ],
+            "title": "Direction",
+            "type": "string"
+          },
+          "from_shift_type": {
+            "$ref": "#/components/schemas/ShiftType"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "const": "shift_transition_preference",
+            "title": "Kind",
+            "type": "string"
+          },
+          "to_shift_type": {
+            "$ref": "#/components/schemas/ShiftType"
+          },
+          "weight": {
+            "exclusiveMinimum": 0,
+            "title": "Weight",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "from_shift_type",
+          "to_shift_type",
+          "direction",
+          "weight"
+        ],
+        "title": "ShiftTransitionPreference",
+        "type": "object"
+      },
+      "ShiftType": {
+        "enum": [
+          "off",
+          "day",
+          "night",
+          "formation",
+          "recovery",
+          "holiday"
+        ],
+        "title": "ShiftType",
+        "type": "string"
+      },
+      "ShiftTypeCatalogue": {
+        "maxItems": 6,
+        "minItems": 6,
+        "prefixItems": [
+          {
+            "$ref": "#/components/schemas/OffShiftTypeDefinition"
+          },
+          {
+            "$ref": "#/components/schemas/DayShiftTypeDefinition"
+          },
+          {
+            "$ref": "#/components/schemas/NightShiftTypeDefinition"
+          },
+          {
+            "$ref": "#/components/schemas/FormationShiftTypeDefinition"
+          },
+          {
+            "$ref": "#/components/schemas/RecoveryShiftTypeDefinition"
+          },
+          {
+            "$ref": "#/components/schemas/HolidayShiftTypeDefinition"
+          }
+        ],
+        "title": "ShiftTypeCatalogue",
+        "type": "array"
+      },
+      "ShiftTypeDefinition": {
+        "discriminator": {
+          "mapping": {
+            "day": "#/components/schemas/DayShiftTypeDefinition",
+            "formation": "#/components/schemas/FormationShiftTypeDefinition",
+            "holiday": "#/components/schemas/HolidayShiftTypeDefinition",
+            "night": "#/components/schemas/NightShiftTypeDefinition",
+            "off": "#/components/schemas/OffShiftTypeDefinition",
+            "recovery": "#/components/schemas/RecoveryShiftTypeDefinition"
+          },
+          "propertyName": "shift_type"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/OffShiftTypeDefinition"
+          },
+          {
+            "$ref": "#/components/schemas/DayShiftTypeDefinition"
+          },
+          {
+            "$ref": "#/components/schemas/NightShiftTypeDefinition"
+          },
+          {
+            "$ref": "#/components/schemas/FormationShiftTypeDefinition"
+          },
+          {
+            "$ref": "#/components/schemas/RecoveryShiftTypeDefinition"
+          },
+          {
+            "$ref": "#/components/schemas/HolidayShiftTypeDefinition"
+          }
+        ],
+        "title": "ShiftTypeDefinition"
+      },
+      "ShiftTypeTarget": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "shift_type",
+            "title": "Kind",
+            "type": "string"
+          },
+          "shift_type": {
+            "$ref": "#/components/schemas/ShiftType"
+          }
+        },
+        "required": [
+          "kind",
+          "shift_type"
+        ],
+        "title": "ShiftTypeTarget",
+        "type": "object"
+      },
+      "SolveDepartment": {
+        "additionalProperties": false,
+        "properties": {
+          "department_id": {
+            "format": "uuid",
+            "title": "Department Id",
+            "type": "string"
+          },
+          "duration_hours": {
+            "maximum": 24,
+            "minimum": 1,
+            "title": "Duration Hours",
+            "type": "integer"
+          },
+          "shift_type": {
+            "enum": [
+              "day",
+              "night"
+            ],
+            "title": "Shift Type",
+            "type": "string"
+          },
+          "staffing_demand": {
+            "maxItems": 7,
+            "minItems": 7,
+            "prefixItems": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "minimum": 0,
+                "type": "integer"
+              }
+            ],
+            "title": "Staffing Demand",
+            "type": "array"
+          }
+        },
+        "required": [
+          "department_id",
+          "shift_type",
+          "duration_hours",
+          "staffing_demand"
+        ],
+        "title": "SolveDepartment",
+        "type": "object"
+      },
+      "SolveDiagnostics": {
+        "additionalProperties": false,
+        "properties": {
+          "best_objective_bound": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Best Objective Bound"
+          },
+          "branches": {
+            "minimum": 0,
+            "title": "Branches",
+            "type": "integer"
+          },
+          "conflicts": {
+            "minimum": 0,
+            "title": "Conflicts",
+            "type": "integer"
+          },
+          "contributions": {
+            "items": {
+              "$ref": "#/components/schemas/ObjectiveContribution"
+            },
+            "title": "Contributions",
+            "type": "array"
+          },
+          "objective_value": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objective Value"
+          },
+          "wall_time_seconds": {
+            "minimum": 0,
+            "title": "Wall Time Seconds",
+            "type": "number"
+          }
+        },
+        "required": [
+          "wall_time_seconds",
+          "conflicts",
+          "branches",
+          "objective_value",
+          "best_objective_bound",
+          "contributions"
+        ],
+        "title": "SolveDiagnostics",
+        "type": "object"
+      },
+      "SolveEmployee": {
+        "additionalProperties": false,
+        "properties": {
+          "employee_id": {
+            "format": "uuid",
+            "title": "Employee Id",
+            "type": "string"
+          },
+          "overtime_hours": {
+            "maximum": 1000,
+            "minimum": 0,
+            "title": "Overtime Hours",
+            "type": "integer"
+          },
+          "weekly_hours_ceiling": {
+            "maximum": 168,
+            "minimum": 1,
+            "title": "Weekly Hours Ceiling",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "employee_id",
+          "overtime_hours",
+          "weekly_hours_ceiling"
+        ],
+        "title": "SolveEmployee",
+        "type": "object"
+      },
+      "SolveRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "departments": {
+            "items": {
+              "$ref": "#/components/schemas/SolveDepartment"
+            },
+            "title": "Departments",
+            "type": "array"
+          },
+          "employees": {
+            "items": {
+              "$ref": "#/components/schemas/SolveEmployee"
+            },
+            "minItems": 1,
+            "title": "Employees",
+            "type": "array"
+          },
+          "objectives": {
+            "items": {
+              "discriminator": {
+                "mapping": {
+                  "consecutive_department_continuity_objective": "#/components/schemas/ConsecutiveDepartmentContinuityObjective",
+                  "consecutive_shift_preference": "#/components/schemas/ConsecutiveShiftPreference",
+                  "employee_preference_objective": "#/components/schemas/EmployeePreferenceObjective",
+                  "excess_recovery_objective": "#/components/schemas/ExcessRecoveryObjective",
+                  "maximum_remaining_overtime_objective": "#/components/schemas/MaximumRemainingOvertimeObjective",
+                  "night_shift_balance_objective": "#/components/schemas/NightShiftBalanceObjective",
+                  "remaining_overtime_objective": "#/components/schemas/RemainingOvertimeObjective",
+                  "shift_transition_preference": "#/components/schemas/ShiftTransitionPreference",
+                  "weekly_shift_count_preference": "#/components/schemas/WeeklyShiftCountPreference",
+                  "workload_balance_objective": "#/components/schemas/WorkloadBalanceObjective"
+                },
+                "propertyName": "kind"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/ConsecutiveShiftPreference"
+                },
+                {
+                  "$ref": "#/components/schemas/WeeklyShiftCountPreference"
+                },
+                {
+                  "$ref": "#/components/schemas/ShiftTransitionPreference"
+                },
+                {
+                  "$ref": "#/components/schemas/EmployeePreferenceObjective"
+                },
+                {
+                  "$ref": "#/components/schemas/WorkloadBalanceObjective"
+                },
+                {
+                  "$ref": "#/components/schemas/NightShiftBalanceObjective"
+                },
+                {
+                  "$ref": "#/components/schemas/RemainingOvertimeObjective"
+                },
+                {
+                  "$ref": "#/components/schemas/MaximumRemainingOvertimeObjective"
+                },
+                {
+                  "$ref": "#/components/schemas/ExcessRecoveryObjective"
+                },
+                {
+                  "$ref": "#/components/schemas/ConsecutiveDepartmentContinuityObjective"
+                }
+              ]
+            },
+            "title": "Objectives",
+            "type": "array"
+          },
+          "planning_entries": {
+            "items": {
+              "discriminator": {
+                "mapping": {
+                  "employee_preference": "#/components/schemas/EmployeePreference",
+                  "fixed_assignment": "#/components/schemas/FixedAssignment"
+                },
+                "propertyName": "kind"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/FixedAssignment"
+                },
+                {
+                  "$ref": "#/components/schemas/EmployeePreference"
+                }
+              ]
+            },
+            "title": "Planning Entries",
+            "type": "array"
+          },
+          "planning_weeks": {
+            "maximum": 12,
+            "minimum": 1,
+            "title": "Planning Weeks",
+            "type": "integer"
+          },
+          "policies": {
+            "items": {
+              "discriminator": {
+                "mapping": {
+                  "consecutive_shift_limit": "#/components/schemas/ConsecutiveShiftLimit",
+                  "forbidden_shift_transition": "#/components/schemas/ForbiddenShiftTransition",
+                  "weekly_shift_count_limit": "#/components/schemas/WeeklyShiftCountLimit"
+                },
+                "propertyName": "kind"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/ConsecutiveShiftLimit"
+                },
+                {
+                  "$ref": "#/components/schemas/WeeklyShiftCountLimit"
+                },
+                {
+                  "$ref": "#/components/schemas/ForbiddenShiftTransition"
+                }
+              ]
+            },
+            "title": "Policies",
+            "type": "array"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "workspace_revision": {
+            "minimum": 1,
+            "title": "Workspace Revision",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "schema_version",
+          "workspace_revision",
+          "planning_weeks",
+          "employees",
+          "departments",
+          "planning_entries",
+          "policies",
+          "objectives"
+        ],
+        "title": "SolveRequest",
+        "type": "object"
+      },
+      "SolveResult": {
+        "discriminator": {
+          "mapping": {
+            "feasible": "#/components/schemas/FeasibleSolveResult",
+            "infeasible": "#/components/schemas/InfeasibleSolveResult",
+            "optimal": "#/components/schemas/OptimalSolveResult",
+            "unknown": "#/components/schemas/UnknownSolveResult"
+          },
+          "propertyName": "status"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/OptimalSolveResult"
+          },
+          {
+            "$ref": "#/components/schemas/FeasibleSolveResult"
+          },
+          {
+            "$ref": "#/components/schemas/InfeasibleSolveResult"
+          },
+          {
+            "$ref": "#/components/schemas/UnknownSolveResult"
+          }
+        ],
+        "title": "SolveResult"
+      },
+      "StateResponse": {
+        "discriminator": {
+          "mapping": {
+            "False": "#/components/schemas/UninitializedState",
+            "True": "#/components/schemas/InitializedState"
+          },
+          "propertyName": "initialized"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/UninitializedState"
+          },
+          {
+            "$ref": "#/components/schemas/InitializedState"
+          }
+        ],
+        "title": "StateResponse"
+      },
+      "UninitializedState": {
+        "additionalProperties": false,
+        "properties": {
+          "initialized": {
+            "const": false,
+            "title": "Initialized",
+            "type": "boolean"
+          },
+          "shift_types": {
+            "maxItems": 6,
+            "minItems": 6,
+            "prefixItems": [
+              {
+                "$ref": "#/components/schemas/OffShiftTypeDefinition"
+              },
+              {
+                "$ref": "#/components/schemas/DayShiftTypeDefinition"
+              },
+              {
+                "$ref": "#/components/schemas/NightShiftTypeDefinition"
+              },
+              {
+                "$ref": "#/components/schemas/FormationShiftTypeDefinition"
+              },
+              {
+                "$ref": "#/components/schemas/RecoveryShiftTypeDefinition"
+              },
+              {
+                "$ref": "#/components/schemas/HolidayShiftTypeDefinition"
+              }
+            ],
+            "title": "Shift Types",
+            "type": "array"
+          }
+        },
+        "required": [
+          "initialized",
+          "shift_types"
+        ],
+        "title": "UninitializedState",
+        "type": "object"
+      },
+      "UnknownSolveResult": {
+        "additionalProperties": false,
+        "properties": {
+          "diagnostics": {
+            "$ref": "#/components/schemas/SolveDiagnostics"
+          },
+          "status": {
+            "const": "unknown",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "diagnostics"
+        ],
+        "title": "UnknownSolveResult",
+        "type": "object"
+      },
+      "UpdateObjective": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "update_objective",
+            "title": "Kind",
+            "type": "string"
+          },
+          "objective": {
+            "discriminator": {
+              "mapping": {
+                "consecutive_department_continuity_objective": "#/components/schemas/ConsecutiveDepartmentContinuityObjective",
+                "consecutive_shift_preference": "#/components/schemas/ConsecutiveShiftPreference",
+                "employee_preference_objective": "#/components/schemas/EmployeePreferenceObjective",
+                "excess_recovery_objective": "#/components/schemas/ExcessRecoveryObjective",
+                "maximum_remaining_overtime_objective": "#/components/schemas/MaximumRemainingOvertimeObjective",
+                "night_shift_balance_objective": "#/components/schemas/NightShiftBalanceObjective",
+                "remaining_overtime_objective": "#/components/schemas/RemainingOvertimeObjective",
+                "shift_transition_preference": "#/components/schemas/ShiftTransitionPreference",
+                "weekly_shift_count_preference": "#/components/schemas/WeeklyShiftCountPreference",
+                "workload_balance_objective": "#/components/schemas/WorkloadBalanceObjective"
+              },
+              "propertyName": "kind"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ConsecutiveShiftPreference"
+              },
+              {
+                "$ref": "#/components/schemas/WeeklyShiftCountPreference"
+              },
+              {
+                "$ref": "#/components/schemas/ShiftTransitionPreference"
+              },
+              {
+                "$ref": "#/components/schemas/EmployeePreferenceObjective"
+              },
+              {
+                "$ref": "#/components/schemas/WorkloadBalanceObjective"
+              },
+              {
+                "$ref": "#/components/schemas/NightShiftBalanceObjective"
+              },
+              {
+                "$ref": "#/components/schemas/RemainingOvertimeObjective"
+              },
+              {
+                "$ref": "#/components/schemas/MaximumRemainingOvertimeObjective"
+              },
+              {
+                "$ref": "#/components/schemas/ExcessRecoveryObjective"
+              },
+              {
+                "$ref": "#/components/schemas/ConsecutiveDepartmentContinuityObjective"
+              }
+            ],
+            "title": "Objective"
+          },
+          "objective_id": {
+            "format": "uuid",
+            "title": "Objective Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "objective_id",
+          "objective"
+        ],
+        "title": "UpdateObjective",
+        "type": "object"
+      },
+      "UpdatePolicy": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "update_policy",
+            "title": "Kind",
+            "type": "string"
+          },
+          "policy": {
+            "discriminator": {
+              "mapping": {
+                "consecutive_shift_limit": "#/components/schemas/ConsecutiveShiftLimit",
+                "forbidden_shift_transition": "#/components/schemas/ForbiddenShiftTransition",
+                "weekly_shift_count_limit": "#/components/schemas/WeeklyShiftCountLimit"
+              },
+              "propertyName": "kind"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ConsecutiveShiftLimit"
+              },
+              {
+                "$ref": "#/components/schemas/WeeklyShiftCountLimit"
+              },
+              {
+                "$ref": "#/components/schemas/ForbiddenShiftTransition"
+              }
+            ],
+            "title": "Policy"
+          },
+          "policy_id": {
+            "format": "uuid",
+            "title": "Policy Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "policy_id",
+          "policy"
+        ],
+        "title": "UpdatePolicy",
+        "type": "object"
+      },
+      "WeeklyShiftCountLimit": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "const": "weekly_shift_count_limit",
+            "title": "Kind",
+            "type": "string"
+          },
+          "maximum_count": {
+            "anyOf": [
+              {
+                "maximum": 7,
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maximum Count"
+          },
+          "minimum_count": {
+            "anyOf": [
+              {
+                "maximum": 7,
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Minimum Count"
+          },
+          "shift_type": {
+            "$ref": "#/components/schemas/ShiftType"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "shift_type",
+          "minimum_count",
+          "maximum_count"
+        ],
+        "title": "WeeklyShiftCountLimit",
+        "type": "object"
+      },
+      "WeeklyShiftCountPreference": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "const": "weekly_shift_count_preference",
+            "title": "Kind",
+            "type": "string"
+          },
+          "preferred_maximum": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WeightedBound"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "preferred_minimum": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WeightedBound"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "shift_type": {
+            "$ref": "#/components/schemas/ShiftType"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "shift_type",
+          "preferred_minimum",
+          "preferred_maximum"
+        ],
+        "title": "WeeklyShiftCountPreference",
+        "type": "object"
+      },
+      "WeightedBound": {
+        "additionalProperties": false,
+        "properties": {
+          "value": {
+            "title": "Value",
+            "type": "integer"
+          },
+          "weight": {
+            "exclusiveMinimum": 0,
+            "title": "Weight",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "value",
+          "weight"
+        ],
+        "title": "WeightedBound",
+        "type": "object"
+      },
+      "WorkloadBalanceObjective": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "const": "workload_balance_objective",
+            "title": "Kind",
+            "type": "string"
+          },
+          "weight": {
+            "exclusiveMinimum": 0,
+            "title": "Weight",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "weight"
+        ],
+        "title": "WorkloadBalanceObjective",
+        "type": "object"
+      },
+      "Workspace": {
+        "additionalProperties": false,
+        "properties": {
+          "objectives": {
+            "items": {
+              "discriminator": {
+                "mapping": {
+                  "consecutive_department_continuity_objective": "#/components/schemas/ConsecutiveDepartmentContinuityObjective",
+                  "consecutive_shift_preference": "#/components/schemas/ConsecutiveShiftPreference",
+                  "employee_preference_objective": "#/components/schemas/EmployeePreferenceObjective",
+                  "excess_recovery_objective": "#/components/schemas/ExcessRecoveryObjective",
+                  "maximum_remaining_overtime_objective": "#/components/schemas/MaximumRemainingOvertimeObjective",
+                  "night_shift_balance_objective": "#/components/schemas/NightShiftBalanceObjective",
+                  "remaining_overtime_objective": "#/components/schemas/RemainingOvertimeObjective",
+                  "shift_transition_preference": "#/components/schemas/ShiftTransitionPreference",
+                  "weekly_shift_count_preference": "#/components/schemas/WeeklyShiftCountPreference",
+                  "workload_balance_objective": "#/components/schemas/WorkloadBalanceObjective"
+                },
+                "propertyName": "kind"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/ConsecutiveShiftPreference"
+                },
+                {
+                  "$ref": "#/components/schemas/WeeklyShiftCountPreference"
+                },
+                {
+                  "$ref": "#/components/schemas/ShiftTransitionPreference"
+                },
+                {
+                  "$ref": "#/components/schemas/EmployeePreferenceObjective"
+                },
+                {
+                  "$ref": "#/components/schemas/WorkloadBalanceObjective"
+                },
+                {
+                  "$ref": "#/components/schemas/NightShiftBalanceObjective"
+                },
+                {
+                  "$ref": "#/components/schemas/RemainingOvertimeObjective"
+                },
+                {
+                  "$ref": "#/components/schemas/MaximumRemainingOvertimeObjective"
+                },
+                {
+                  "$ref": "#/components/schemas/ExcessRecoveryObjective"
+                },
+                {
+                  "$ref": "#/components/schemas/ConsecutiveDepartmentContinuityObjective"
+                }
+              ]
+            },
+            "title": "Objectives",
+            "type": "array"
+          },
+          "policies": {
+            "items": {
+              "discriminator": {
+                "mapping": {
+                  "consecutive_shift_limit": "#/components/schemas/ConsecutiveShiftLimit",
+                  "forbidden_shift_transition": "#/components/schemas/ForbiddenShiftTransition",
+                  "weekly_shift_count_limit": "#/components/schemas/WeeklyShiftCountLimit"
+                },
+                "propertyName": "kind"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/ConsecutiveShiftLimit"
+                },
+                {
+                  "$ref": "#/components/schemas/WeeklyShiftCountLimit"
+                },
+                {
+                  "$ref": "#/components/schemas/ForbiddenShiftTransition"
+                }
+              ]
+            },
+            "title": "Policies",
+            "type": "array"
+          },
+          "revision": {
+            "minimum": 1,
+            "title": "Revision",
+            "type": "integer"
+          },
+          "scenario": {
+            "$ref": "#/components/schemas/Scenario"
+          },
+          "schema_version": {
+            "const": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "schema_version",
+          "revision",
+          "scenario",
+          "policies",
+          "objectives"
+        ],
+        "title": "Workspace",
+        "type": "object"
+      },
+      "WorkspaceChange": {
+        "discriminator": {
+          "mapping": {
+            "add_objective": "#/components/schemas/AddObjective",
+            "add_policy": "#/components/schemas/AddPolicy",
+            "remove_objective": "#/components/schemas/RemoveObjective",
+            "remove_policy": "#/components/schemas/RemovePolicy",
+            "update_objective": "#/components/schemas/UpdateObjective",
+            "update_policy": "#/components/schemas/UpdatePolicy"
+          },
+          "propertyName": "kind"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/AddPolicy"
+          },
+          {
+            "$ref": "#/components/schemas/UpdatePolicy"
+          },
+          {
+            "$ref": "#/components/schemas/RemovePolicy"
+          },
+          {
+            "$ref": "#/components/schemas/AddObjective"
+          },
+          {
+            "$ref": "#/components/schemas/UpdateObjective"
+          },
+          {
+            "$ref": "#/components/schemas/RemoveObjective"
+          }
+        ],
+        "title": "WorkspaceChange"
       }
     }
   },

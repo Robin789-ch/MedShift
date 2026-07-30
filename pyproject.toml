@@ -16,6 +16,7 @@ dev = [
 
 [tool.pytest.ini_options]
 testpaths = [
+    "packages/contracts/tests",
     "services/agent/tests",
     "services/optimizer/tests",
 ]

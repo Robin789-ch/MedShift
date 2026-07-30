@@ -1,13 +1,15 @@
 import os
 from collections.abc import Mapping
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from httpx import AsyncBaseTransport, AsyncClient, HTTPError
 from pydantic import ValidationError
 
 from medshift_agent.config import Settings
-from medshift_contracts import HealthResponse
+from medshift_agent.openapi import configure_contract_openapi
+from medshift_contracts import HealthResponse, request_invalid_error
 
 
 def create_app(
@@ -16,6 +18,16 @@ def create_app(
 ) -> FastAPI:
     runtime_environ = os.environ if environ is None else environ
     app = FastAPI(title="MedShift Agent", version="0.2.0")
+
+    @app.exception_handler(RequestValidationError)
+    async def request_validation_error(
+        _request: Request,
+        _error: RequestValidationError,
+    ) -> JSONResponse:
+        return JSONResponse(
+            status_code=422,
+            content=request_invalid_error().model_dump(mode="json"),
+        )
 
     @app.get("/api/health", response_model=HealthResponse)
     async def health() -> HealthResponse | JSONResponse:
@@ -73,6 +85,7 @@ def create_app(
             },
         )
 
+    configure_contract_openapi(app)
     return app
 
 
