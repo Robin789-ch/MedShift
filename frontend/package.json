@@ -8,6 +8,7 @@
     "build": "tsc --noEmit && vite build",
     "generate:api": "uv run --directory .. python scripts/export-openapi.py && openapi-typescript src/api/openapi.json -o src/api/schema.d.ts",
     "check:api": "npm run generate:api && git diff --exit-code -- src/api/openapi.json src/api/schema.d.ts",
+    "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -23,6 +24,7 @@
     "@vitejs/plugin-react": "^5.1.0",
     "openapi-typescript": "6.7.6",
     "typescript": "^5.9.0",
-    "vite": "^7.3.0"
+    "vite": "^7.3.0",
+    "vitest": "^4.1.10"
   }
 }

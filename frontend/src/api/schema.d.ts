@@ -5,9 +5,25 @@
 
 
 export interface paths {
+  "/api/chat": {
+    /** Chat */
+    post: operations["chat_api_chat_post"];
+  };
   "/api/health": {
     /** Health */
     get: operations["health_api_health_get"];
+  };
+  "/api/scenario": {
+    /** Save Scenario */
+    put: operations["save_scenario_api_scenario_put"];
+  };
+  "/api/solve": {
+    /** Solve */
+    post: operations["solve_api_solve_post"];
+  };
+  "/api/state": {
+    /** State */
+    get: operations["state_api_state_get"];
   };
 }
 
@@ -781,6 +797,12 @@ export interface components {
       /** Planning Weeks */
       planning_weeks: number;
     };
+    /** ScenarioSaveRequest */
+    ScenarioSaveRequest: {
+      /** Base Revision */
+      base_revision: number | null;
+      scenario: components["schemas"]["Scenario"];
+    };
     /** Schedule */
     Schedule: {
       /** Employees */
@@ -1032,6 +1054,17 @@ export type external = Record<string, never>;
 
 export interface operations {
 
+  /** Chat */
+  chat_api_chat_post: {
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": unknown;
+        };
+      };
+    };
+  };
   /** Health */
   health_api_health_get: {
     responses: {
@@ -1039,6 +1072,50 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["HealthResponse"];
+        };
+      };
+    };
+  };
+  /** Save Scenario */
+  save_scenario_api_scenario_put: {
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ScenarioSaveRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["InitializedState"];
+        };
+      };
+      /** @description Request Invalid */
+      422: {
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+    };
+  };
+  /** Solve */
+  solve_api_solve_post: {
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": unknown;
+        };
+      };
+    };
+  };
+  /** State */
+  state_api_state_get: {
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["UninitializedState"] | components["schemas"]["InitializedState"];
         };
       };
     };

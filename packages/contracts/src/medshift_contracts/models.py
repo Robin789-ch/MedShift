@@ -301,6 +301,11 @@ class Scenario(ContractModel):
         return self
 
 
+class ScenarioSaveRequest(ContractModel):
+    base_revision: Annotated[int, Field(ge=1)] | None
+    scenario: Scenario
+
+
 class ConsecutiveShiftLimit(ContractModel):
     id: DecisionId
     kind: Literal["consecutive_shift_limit"]

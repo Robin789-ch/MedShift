@@ -1737,6 +1737,32 @@
         "title": "Scenario",
         "type": "object"
       },
+      "ScenarioSaveRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "base_revision": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Revision"
+          },
+          "scenario": {
+            "$ref": "#/components/schemas/Scenario"
+          }
+        },
+        "required": [
+          "base_revision",
+          "scenario"
+        ],
+        "title": "ScenarioSaveRequest",
+        "type": "object"
+      },
       "Schedule": {
         "additionalProperties": false,
         "properties": {
@@ -2708,6 +2734,22 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/chat": {
+      "post": {
+        "operationId": "chat_api_chat_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Chat"
+      }
+    },
     "/api/health": {
       "get": {
         "operationId": "health_api_health_get",
@@ -2724,6 +2766,93 @@
           }
         },
         "summary": "Health"
+      }
+    },
+    "/api/scenario": {
+      "put": {
+        "operationId": "save_scenario_api_scenario_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScenarioSaveRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InitializedState"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Request Invalid"
+          }
+        },
+        "summary": "Save Scenario"
+      }
+    },
+    "/api/solve": {
+      "post": {
+        "operationId": "solve_api_solve_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Solve"
+      }
+    },
+    "/api/state": {
+      "get": {
+        "operationId": "state_api_state_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "discriminator": {
+                    "mapping": {
+                      "False": "#/components/schemas/UninitializedState",
+                      "True": "#/components/schemas/InitializedState"
+                    },
+                    "propertyName": "initialized"
+                  },
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/UninitializedState"
+                    },
+                    {
+                      "$ref": "#/components/schemas/InitializedState"
+                    }
+                  ],
+                  "title": "Response State Api State Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "State"
       }
     }
   }
