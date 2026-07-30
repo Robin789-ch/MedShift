@@ -1,0 +1,3 @@
+# Limit agent authority to policies and objectives
+
+The V0.2 agent may add, update, and remove only scheduling policies and optimization objectives from a closed catalogue. Scenario data remains under direct user control, including employees, the planning horizon, department definitions, staffing demand, weekly-hours ceilings, fixed assignments, and employee preferences; presentation metadata, the fixed application-owned Shift Type catalogue, and solver runtime settings are also outside agent authority. This boundary trades some conversational convenience for predictable ownership, auditability, and protection of operational facts and human commitments.

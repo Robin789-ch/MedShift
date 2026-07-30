@@ -1,0 +1,3 @@
+# Defer strict provider privacy controls until deployment
+
+V0.2 uses standard OpenRouter routing for its optional Chat feature without requiring zero-data-retention or non-collecting provider filters. The application minimizes structured context, requires versioned opt-in consent, warns that OpenRouter or downstream providers may retain or use chat content, and tells users not to enter identifying employee or patient information; the rest of MedShift remains fully local without Chat. This availability-first choice is limited to the local prototype: privacy and legal review, provider-retention policy, and enforceable routing controls are mandatory blockers before any deployment.

@@ -1,0 +1,3 @@
+# Use one Optimizer interface for HTTP and CLI
+
+V0.2 exposes one core `solve(SolveRequest) -> SolveResult` interface containing all validation, model construction, execution, status mapping, schedule extraction, and structured diagnostics. Contract validation rejects malformed values and broken references but accepts well-formed contradictory scheduling decisions, whose feasibility remains exclusively the Optimizer's responsibility. The stateless FastAPI route and retained command-line solver are thin adapters over that interface; the CLI reads the new workspace format and no longer parses legacy TOML or posts results to the frontend. This prevents solver behavior from diverging between local automation and the web application.

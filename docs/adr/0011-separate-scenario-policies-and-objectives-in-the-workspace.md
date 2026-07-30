@@ -1,0 +1,3 @@
+# Separate scenario, policies, and objectives in the workspace
+
+The durable V0.2 workspace contains a schema version, revision, one typed scenario, a policy catalogue, and an objective catalogue. The scenario owns the Planning Horizon, stable Employees with overtime and mandatory Weekly-Hours Ceilings, stable departments with presentation and exact demand data, and discriminated Fixed Assignment or Employee Preference entries; Shift Types remain application-owned. This replaces redundant counts, positional arrays, persisted Shift Type definitions, derived cover demand, and embedded request weights, while conversation, pending proposals, consent, solve results, and runtime settings remain outside the workspace.

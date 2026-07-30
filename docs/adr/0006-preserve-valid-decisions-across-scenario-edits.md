@@ -1,0 +1,3 @@
+# Preserve valid decisions across scenario edits
+
+Editing scenario data preserves every still-valid scheduling policy, optimization objective, Fixed Assignment, and Employee Preference rather than clearing the catalogue wholesale. Renames and value changes retain dependent data; confirmed Employee or department deletion removes only references to that entity, and shortening the planning horizon removes only grid entries that fall outside it. Each edited workspace is revalidated and committed atomically, trading simpler replacement semantics for predictable preservation of user and agent decisions.

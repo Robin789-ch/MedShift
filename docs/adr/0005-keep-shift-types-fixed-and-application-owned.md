@@ -1,0 +1,3 @@
+# Keep Shift Types fixed and application-owned
+
+V0.2 uses a closed application-owned Shift Type catalogue rather than persisting user-defined Shift Types in each workspace. Each Shift Type has a stable semantic enum value, while its code, meaning, hour semantics, demand behavior, overtime-recovery behavior, and assignment eligibility are versioned with the application; workspace entities reference the enum but cannot redefine it. This trades user extensibility for consistent optimizer semantics, simpler validation, and protection against incompatible workspace definitions, so adding or changing a Shift Type requires an application and schema migration.
